@@ -52,7 +52,7 @@ class Sequencer {
         this.ctx = this.config.canvas.getContext('2d')
 
         const s = this.parseSequence(this.config.from, this.config.to)
-        this.fileList = Sequencer.buildFileList(s)
+        this.fileList = this.buildFileList(s)
 
         this.size(this.ctx.canvas.width, this.ctx.canvas.height)
 
