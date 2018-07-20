@@ -180,14 +180,20 @@ class Sequencer {
 
     preloader(arrayToPopulate, fileList, imageLoadCallback, queueCompleteCallbak) {
         let iterativeCount = [ 16, 8, 4, 2, 1 ]
-
+        let firstLoadImageCount = Math.min(fileList.length, 16)
         let totalCount = 0
 
-        iterativeCount.forEach((currentCount) => {
-            for ( var current = 0; current < fileList.length; current += currentCount ) {
-                iterativeLoader(current)
+        for ( let firstImageCount = 0; firstImageCount <= firstLoadImageCount; firstImageCount++ ) {
+            iterativeLoader(firstImageCount)
+
+            if ( firstImageCount === firstLoadImageCount ) {
+                iterativeCount.forEach((currentCount) => {
+                    for ( var current = 0; current < fileList.length; current += currentCount ) {
+                        iterativeLoader(current)
+                    }
+                })
             }
-        })
+        }
 
         function iterativeLoader(current) {
             if ( !arrayToPopulate[ current ] ) {
