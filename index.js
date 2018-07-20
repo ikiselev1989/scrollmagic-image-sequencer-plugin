@@ -180,7 +180,7 @@ class Sequencer {
 
     preloader(arrayToPopulate, fileList, imageLoadCallback, queueCompleteCallbak) {
         let iterativeCount = [ 16, 8, 4, 2, 1 ]
-        let firstLoadImageCount = Math.min(fileList.length, 16)
+        let firstLoadImageCount = Math.round(fileList.length * 0.1)
         let totalCount = 0
 
         for ( let firstImageCount = 0; firstImageCount <= firstLoadImageCount; firstImageCount++ ) {
