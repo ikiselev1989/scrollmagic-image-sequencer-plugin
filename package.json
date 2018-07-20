@@ -11,10 +11,11 @@
     "url": "git+https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin.git"
   },
   "keywords": [
-    "scrollmagic",
-    "plugin",
-    "image",
-    "sequencer"
+    "scrollmagic plugin",
+    "image-sequencer",
+    "image sequencer",
+    "scrollmagic sequencer",
+    "scrollmagic-sequencer plugin"
   ],
   "author": "Ilya Kiselev (ikiselev1989@gmail.com)",
   "license": "ISC",
