@@ -43,3 +43,6 @@ scene.addTo(controller)
 }
 ```
 > Based on [Andreas Gysin Sequencer](https://github.com/ertdfgcvb/Sequencer)
+
+## Changes
+* 1.4.0 Add iterative way load image (each 16, 8, 4 and etc.)

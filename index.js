@@ -179,40 +179,26 @@ class Sequencer {
     }
 
     preloader(arrayToPopulate, fileList, imageLoadCallback, queueCompleteCallbak) {
-        const concurrentLoads = Math.min(fileList.length, 4)
-        let current = arrayToPopulate.length - 1 // id: order in array
-        let count = arrayToPopulate.length       // count: count of image loaded... can be out of sync of id.
-        for ( let i = 0; i < concurrentLoads; i++ ) loadNext();
+        let iterativeCount = [ 16, 8, 4, 2, 1 ]
 
-        function loadNext() {
-            if ( current >= fileList.length - 1 ) return
-            current++
+        let totalCount = 0
 
-            //console.log('Loading ' + fileList[current] + '...');
-            const img = new Image()
-            img.src = fileList[ current ];
-            (function (id) {
-                img.onload = function (e) {
-                    if ( typeof imageLoadCallback === 'function' ) imageLoadCallback({
-                        id: id,
-                        img: img,
-                        count: ++count,
-                        total: fileList.length
-                    })
-                    if ( count < fileList.length ) {
-                        loadNext()
-                    }
-                    if ( count == fileList.length ) {
-                        if ( typeof queueCompleteCallbak === 'function' ) queueCompleteCallbak({
-                            total: fileList.length
-                        })
-                    }
+        iterativeCount.forEach((currentCount) => {
+            for ( var current = 0; current < fileList.length; current += currentCount ) {
+                iterativeLoader(current)
+            }
+        })
+
+        function iterativeLoader(current) {
+            if ( !arrayToPopulate[ current ] ) {
+                const img = new Image()
+                img.src = fileList[ current ]
+                img.onerror = function () {
+                    console.log(`Error with image-id: ${current}`)
                 }
-                img.onerror = function (e) {
-                    console.error('Error with: ' + fileList[ id ])
-                }
-            })(current)
-            arrayToPopulate.push(img)
+                arrayToPopulate[ current ] = img
+                totalCount++
+            }
         }
     }
 }
