@@ -47,6 +47,6 @@ scene.addTo(controller)
 > Based on [Andreas Gysin Sequencer](https://github.com/ertdfgcvb/Sequencer)
 
 ## Changes
-* 1.4.0 Add iterative way load image (each 16, 8, 4 and etc.)
 * 1.5.0 Created progressive loader ( will load by request frame and some frame before and after it ) <br>
         removed bug with drawing the first frame
+* 1.4.0 Add iterative way load image (each 16, 8, 4 and etc.)
