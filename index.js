@@ -9,6 +9,8 @@
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
+ * Version: 1.5.0
+ *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
 
@@ -27,8 +29,10 @@ class Sequencer {
             canvas: null,
             from: '',
             to: '',
-            scaleMode: 'cover',      // as in CSS3, can be: auto, cover, contain
-            hiDPI: true
+            scaleMode: 'cover',      // can be: auto, cover, contain
+            hiDPI: true,
+            progressiveLoader: false,
+            preloadFrameCount: 30
         }
 
         this.config = Object.assign({}, defaults, opts)
@@ -46,9 +50,7 @@ class Sequencer {
             return false
         }
 
-        this.current = -1
         this.images = []
-        this.lastLoaded = -1
         this.ctx = this.config.canvas.getContext('2d')
 
         const s = this.parseSequence(this.config.from, this.config.to)
@@ -64,30 +66,18 @@ class Sequencer {
             console.log('load() can be called only once.')
         }
 
-        this.preloader(this.images, this.fileList, this.config.imageLoad, this.config.queueComplete)
-    }
-
-    nextImage() {
-        this.drawImage(++this.current)
-    }
-
-    prevImage() {
-        this.drawImage(--this.current)
-    }
-
-    scrollDrawImage(reqFrame) {
-        let frame = reqFrame - this.current
-
-        for ( let i = 0; i < Math.abs(frame); i++ ) {
-            requestAnimationFrame(() => {
-                frame > 0 ? this.nextImage() : this.prevImage()
-            })
+        if ( !this.config.progressiveLoader ) {
+            this.preloader()
         }
     }
 
+    scrollDrawImage(reqFrame) {
+        this.config.progressiveLoader && this.targetFrameDraw(reqFrame)
+        !this.config.progressiveLoader && this.drawImage(reqFrame)
+    }
+
     drawImage(id) {
-        if ( id === undefined ) id = this.current
-        if ( id < 0 || id >= this.images.length ) return
+        if ( !this.images[ id ] ) return
 
         const r = this.config.hiDPI ? window.devicePixelRatio : 1
         const cw = this.ctx.canvas.width / r
@@ -178,32 +168,48 @@ class Sequencer {
         return q
     }
 
-    preloader(arrayToPopulate, fileList, imageLoadCallback, queueCompleteCallbak) {
-        let iterativeCount = [ 16, 8, 4, 2, 1 ]
-        let firstLoadImageCount = Math.round(fileList.length * 0.1)
-        let totalCount = 0
+    targetFrameDraw(targetFrame) {
+        this.images[ targetFrame ] && this.drawImage(targetFrame)
+        !this.images[ targetFrame ] && this.frameLoader(targetFrame, true)
 
-        for ( let firstImageCount = 0; firstImageCount <= firstLoadImageCount; firstImageCount++ ) {
-            iterativeLoader(firstImageCount)
+        let { preloadFrameCount } = this.config
+
+        for ( var i = -preloadFrameCount; i < preloadFrameCount; i++ ) {
+            this.frameLoader(targetFrame + i)
+        }
+    }
+
+    frameLoader(targetFrame, drawAfterLoad = false) {
+        if ( !this.fileList[ targetFrame ] ) return
+
+        if ( !this.images[ targetFrame ] ) {
+            const img = new Image()
+            img.src = this.fileList[ targetFrame ]
+            img.onload = drawAfterLoad ? () => {
+                this.drawImage(targetFrame)
+            } : null
+            img.onerror = function () {
+                console.log(`Error with image-id: ${targetFrame}`)
+            }
+            this.images[ targetFrame ] = img
+        }
+    }
+
+    preloader() {
+        let iterativeCount = [ 16, 8, 4, 2, 1 ]
+        let firstLoadImageCount = this.config.preloadFrameCount
+
+        this.frameLoader(0, true)
+
+        for ( let firstImageCount = 1; firstImageCount <= firstLoadImageCount; firstImageCount++ ) {
+            this.frameLoader(firstImageCount)
 
             if ( firstImageCount === firstLoadImageCount ) {
                 iterativeCount.forEach((currentCount) => {
-                    for ( var current = 0; current < fileList.length; current += currentCount ) {
-                        iterativeLoader(current)
+                    for ( var current = 0; current < this.fileList.length; current += currentCount ) {
+                        this.frameLoader(current)
                     }
                 })
-            }
-        }
-
-        function iterativeLoader(current) {
-            if ( !arrayToPopulate[ current ] ) {
-                const img = new Image()
-                img.src = fileList[ current ]
-                img.onerror = function () {
-                    console.log(`Error with image-id: ${current}`)
-                }
-                arrayToPopulate[ current ] = img
-                totalCount++
             }
         }
     }
@@ -227,7 +233,7 @@ class Sequencer {
         let sequencer = new Sequencer(opt)
 
         this.on('progress', () => {
-            let currentFrame = Math.round(this.progress() * (sequencer.images.length - 1))
+            let currentFrame = Math.round(this.progress() * (sequencer.fileList.length - 1))
             sequencer.scrollDrawImage(currentFrame)
         })
     }
