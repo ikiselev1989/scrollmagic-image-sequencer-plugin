@@ -2879,7 +2879,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version:
+ * Version: 1.6.0
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -2903,7 +2903,9 @@ var Sequencer = function () {
             scaleMode: 'cover', // can be: auto, cover, contain
             hiDPI: true,
             progressiveLoader: false,
-            preloadFrameCount: 10
+            preloadFrameCount: 30,
+            smoothFrameChange: false, // like a movie
+            fps: 60
         };
 
         this.config = Object.assign({}, defaults, opts);
@@ -2921,6 +2923,7 @@ var Sequencer = function () {
             return false;
         }
 
+        this.currentFrame = 0;
         this.images = [];
         this.ctx = this.config.canvas.getContext('2d');
 
@@ -2941,13 +2944,74 @@ var Sequencer = function () {
 
             if (!this.config.progressiveLoader) {
                 this.preloader();
+            } else {
+                var _config = this.config,
+                    smoothFrameChange = _config.smoothFrameChange,
+                    preloadFrameCount = _config.preloadFrameCount,
+                    fps = _config.fps;
+
+
+                this.frameLoader(0, true);
+
+                var preloadFrames = smoothFrameChange ? fps * 2 : preloadFrameCount;
+
+                for (var i = -preloadFrames; i < preloadFrames; i++) {
+                    this.frameLoader(i);
+                }
             }
         }
     }, {
+        key: 'updateFrame',
+        value: function updateFrame(reqFrame) {
+            var smoothFrameChange = this.config.smoothFrameChange;
+
+
+            smoothFrameChange && this.setInterval(reqFrame);
+            !smoothFrameChange && this.scrollDrawImage(reqFrame);
+        }
+    }, {
+        key: 'setInterval',
+        value: function (_setInterval) {
+            function setInterval(_x) {
+                return _setInterval.apply(this, arguments);
+            }
+
+            setInterval.toString = function () {
+                return _setInterval.toString();
+            };
+
+            return setInterval;
+        }(function (reqFrame) {
+            var _this = this;
+
+            var iter = Math.abs(Number(this.currentFrame) - Number(reqFrame));
+
+            clearInterval(this.interval);
+
+            if (iter > 0 && iter <= this.config.fps) {
+                var direction = this.currentFrame > reqFrame ? 'prev' : 'next';
+
+                this.interval = setInterval(function () {
+                    var frame = direction === 'next' ? _this.currentFrame += 1 : _this.currentFrame -= 1;
+
+                    requestAnimationFrame(function () {
+                        _this.scrollDrawImage(frame);
+
+                        iter--;
+                        if (iter <= 0) clearInterval(_this.interval);
+                    });
+                }, 1000 / this.config.fps);
+            } else {
+                this.scrollDrawImage(reqFrame);
+            }
+        })
+    }, {
         key: 'scrollDrawImage',
-        value: function scrollDrawImage(reqFrame) {
-            this.config.progressiveLoader && this.targetFrameDraw(reqFrame);
-            !this.config.progressiveLoader && this.drawImage(reqFrame);
+        value: function scrollDrawImage(frame) {
+            this.currentFrame = frame;
+
+            this.config.progressiveLoader && this.targetFrameDraw(frame);
+            !this.config.progressiveLoader && this.drawImage(frame);
         }
     }, {
         key: 'drawImage',
@@ -3049,17 +3113,21 @@ var Sequencer = function () {
             this.images[targetFrame] && this.drawImage(targetFrame);
             !this.images[targetFrame] && this.frameLoader(targetFrame, true);
 
-            var preloadFrameCount = this.config.preloadFrameCount;
+            var _config2 = this.config,
+                smoothFrameChange = _config2.smoothFrameChange,
+                preloadFrameCount = _config2.preloadFrameCount,
+                fps = _config2.fps;
 
+            var preloadFrames = smoothFrameChange ? fps * 2 : preloadFrameCount;
 
-            for (var i = -preloadFrameCount; i < preloadFrameCount; i++) {
-                this.frameLoader(targetFrame + i);
+            for (var i = -preloadFrames; i < preloadFrames; i++) {
+                this.frameLoader(this.currentFrame + i);
             }
         }
     }, {
         key: 'frameLoader',
         value: function frameLoader(targetFrame) {
-            var _this = this;
+            var _this2 = this;
 
             var drawAfterLoad = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
 
@@ -3069,7 +3137,7 @@ var Sequencer = function () {
                 var img = new Image();
                 img.src = this.fileList[targetFrame];
                 img.onload = drawAfterLoad ? function () {
-                    _this.drawImage(targetFrame);
+                    _this2.drawImage(targetFrame);
                 } : null;
                 img.onerror = function () {
                     console.log('Error with image-id: ' + targetFrame);
@@ -3080,7 +3148,7 @@ var Sequencer = function () {
     }, {
         key: 'preloader',
         value: function preloader() {
-            var _this2 = this;
+            var _this3 = this;
 
             var iterativeCount = [16, 8, 4, 2, 1];
             var firstLoadImageCount = this.config.preloadFrameCount;
@@ -3092,8 +3160,8 @@ var Sequencer = function () {
 
                 if (firstImageCount === firstLoadImageCount) {
                     iterativeCount.forEach(function (currentCount) {
-                        for (var current = 0; current < _this2.fileList.length; current += currentCount) {
-                            _this2.frameLoader(current);
+                        for (var current = 0; current < _this3.fileList.length; current += currentCount) {
+                            _this3.frameLoader(current);
                         }
                     });
                 }
@@ -3121,13 +3189,13 @@ var Sequencer = function () {
 })(undefined, function (ScrollMagic) {
     // 'window' change to 'this'
     ScrollMagic.Scene.prototype.addImageSequencer = function (opt) {
-        var _this3 = this;
+        var _this4 = this;
 
         var sequencer = new Sequencer(opt);
 
         this.on('progress', function () {
-            var currentFrame = Math.round(_this3.progress() * (sequencer.fileList.length - 1));
-            sequencer.scrollDrawImage(currentFrame);
+            var currentFrame = Math.round(_this4.progress() * (sequencer.fileList.length - 1));
+            sequencer.updateFrame(currentFrame);
         });
     };
 });
@@ -3148,7 +3216,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 let controller = new __WEBPACK_IMPORTED_MODULE_0_ScrollMagic___default.a.Controller()
 let scene = new __WEBPACK_IMPORTED_MODULE_0_ScrollMagic___default.a.Scene({
-    duration: '1000%',
+    duration: '2000%',
     triggerHook: 1
 })
 
@@ -3157,7 +3225,8 @@ scene.addImageSequencer({
     from: './images/Aaron_Kyro_001.jpg',
     to: './images/Aaron_Kyro_503.jpg',
     progressiveLoader: true,
-    preloadFrameCount: 100
+    preloadFrameCount: 100,
+    smoothFrameChange: true
 })
 
 scene.addTo(controller)

@@ -41,12 +41,15 @@ scene.addTo(controller)
   scaleMode: 'cover',       // as in CSS3, can be: auto, cover, contain
   hiDPI: true,
   progressiveLoader: true,  // use the progressive loading mode
-  preloadFrameCount: 100    // number of frames for preloading ( for all loading mode )
+  preloadFrameCount: 100,   // number of frames for preloading ( for all loading mode )
+  smoothFrameChange: false, // like a movie
+  fps: 60
 }
 ```
 > Based on [Andreas Gysin Sequencer](https://github.com/ertdfgcvb/Sequencer)
 
 ## Changes
+* 1.6.0 Added smooth frame change option ( like a movie )
 * 1.5.0 Created progressive loader ( will load by request frame and some frame before and after it ) <br>
         removed bug with drawing the first frame
 * 1.4.0 Add iterative way load image (each 16, 8, 4 and etc.)

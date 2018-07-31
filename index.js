@@ -9,7 +9,7 @@
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 1.5.0
+ * Version: 1.6.0
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -32,7 +32,9 @@ class Sequencer {
             scaleMode: 'cover',      // can be: auto, cover, contain
             hiDPI: true,
             progressiveLoader: false,
-            preloadFrameCount: 30
+            preloadFrameCount: 30,
+            smoothFrameChange: false, // like a movie
+            fps: 60
         }
 
         this.config = Object.assign({}, defaults, opts)
@@ -50,6 +52,7 @@ class Sequencer {
             return false
         }
 
+        this.currentFrame = 0
         this.images = []
         this.ctx = this.config.canvas.getContext('2d')
 
@@ -69,11 +72,55 @@ class Sequencer {
         if ( !this.config.progressiveLoader ) {
             this.preloader()
         }
+        else {
+            let { smoothFrameChange, preloadFrameCount, fps } = this.config
+
+            this.frameLoader(0, true)
+
+            let preloadFrames = smoothFrameChange ? fps * 2 : preloadFrameCount
+
+            for ( var i = -preloadFrames; i < preloadFrames; i++ ) {
+                this.frameLoader(i)
+            }
+        }
     }
 
-    scrollDrawImage(reqFrame) {
-        this.config.progressiveLoader && this.targetFrameDraw(reqFrame)
-        !this.config.progressiveLoader && this.drawImage(reqFrame)
+    updateFrame(reqFrame) {
+        let { smoothFrameChange } = this.config
+
+        smoothFrameChange && this.setInterval(reqFrame)
+        !smoothFrameChange && this.scrollDrawImage(reqFrame)
+    }
+
+    setInterval(reqFrame) {
+        let iter = Math.abs(Number(this.currentFrame) - Number(reqFrame))
+
+        clearInterval(this.interval)
+
+        if ( iter > 0 && iter <= this.config.fps ) {
+            let direction = this.currentFrame > reqFrame ? 'prev' : 'next'
+
+            this.interval = setInterval(() => {
+                let frame = direction === 'next' ? this.currentFrame += 1 : this.currentFrame -= 1
+
+                requestAnimationFrame(() => {
+                    this.scrollDrawImage(frame)
+
+                    iter--
+                    if ( iter <= 0 ) clearInterval(this.interval)
+                })
+            }, 1000 / this.config.fps)
+        }
+        else {
+            this.scrollDrawImage(reqFrame)
+        }
+    }
+
+    scrollDrawImage(frame) {
+        this.currentFrame = frame
+
+        this.config.progressiveLoader && this.targetFrameDraw(frame)
+        !this.config.progressiveLoader && this.drawImage(frame)
     }
 
     drawImage(id) {
@@ -172,10 +219,11 @@ class Sequencer {
         this.images[ targetFrame ] && this.drawImage(targetFrame)
         !this.images[ targetFrame ] && this.frameLoader(targetFrame, true)
 
-        let { preloadFrameCount } = this.config
+        let { smoothFrameChange, preloadFrameCount, fps } = this.config
+        let preloadFrames = smoothFrameChange ? fps * 2 : preloadFrameCount
 
-        for ( var i = -preloadFrameCount; i < preloadFrameCount; i++ ) {
-            this.frameLoader(targetFrame + i)
+        for ( var i = -preloadFrames; i < preloadFrames; i++ ) {
+            this.frameLoader(this.currentFrame + i)
         }
     }
 
@@ -234,7 +282,7 @@ class Sequencer {
 
         this.on('progress', () => {
             let currentFrame = Math.round(this.progress() * (sequencer.fileList.length - 1))
-            sequencer.scrollDrawImage(currentFrame)
+            sequencer.updateFrame(currentFrame)
         })
     }
 }))
