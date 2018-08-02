@@ -35,21 +35,23 @@ scene.addTo(controller)
 ## Options
 ```javascript
 {
-  canvas: null,             // canvas node
-  from: '',                 // path to first frame
-  to: '',                   // path to last frame
-  scaleMode: 'cover',       // as in CSS3, can be: auto, cover, contain
-  hiDPI: true,
-  progressiveLoader: true,  // use the progressive loading mode
-  preloadFrameCount: 100,   // number of frames for preloading ( for all loading mode )
-  smoothFrameChange: false, // like a movie
-  fps: 60
+    canvas: null,                               // canvas node
+    from: '',                                   // path to first frame
+    to: '',                                     // path to last frame
+    scaleMode: 'cover',                         // as in CSS3, can be: auto, cover, contain
+    hiDPI: true,
+    asyncLoader: false,                         // async frame loader by scene progress
+    fps: 60,
+    timeDeltaFactor: 5,                         // time compensation factor
+    totalLoadCallback: () => {},                // callback after loading all frames
+    imageLoadCallback: ({ img, frame }) => {}   // callback after loading each frame
 }
 ```
 > Based on [Andreas Gysin Sequencer](https://github.com/ertdfgcvb/Sequencer)
 
 ## Changes
-* 1.6.0 Added smooth frame change option ( like a movie )
-* 1.5.0 Created progressive loader ( will load by request frame and some frame before and after it ) <br>
-        removed bug with drawing the first frame
-* 1.4.0 Add iterative way load image (each 16, 8, 4 and etc.)
+##### 2.0.0
+* Added true fps image render,<br/>
+* Fixed async loader
+* Added callback after loading
+* ... a lot of code refactoring

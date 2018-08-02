@@ -3,17 +3,17 @@ import '../../index.min'
 
 let controller = new ScrollMagic.Controller()
 let scene = new ScrollMagic.Scene({
-    duration: '2000%',
+    duration: '2500%',
     triggerHook: 1
 })
+
+document.querySelector('canvas').width = innerWidth / 2
+document.querySelector('canvas').height = innerHeight / 2
 
 scene.addImageSequencer({
     canvas: document.querySelector('canvas'),
     from: './images/Aaron_Kyro_001.jpg',
-    to: './images/Aaron_Kyro_503.jpg',
-    progressiveLoader: true,
-    preloadFrameCount: 100,
-    smoothFrameChange: true
+    to: './images/Aaron_Kyro_503.jpg'
 })
 
 scene.addTo(controller)
