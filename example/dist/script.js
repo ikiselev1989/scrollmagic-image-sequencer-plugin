@@ -2881,7 +2881,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 2.1.0
+ * Version: 2.2.0
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -2912,137 +2912,141 @@ var Sequencer = function () {
             imageLoadCallback: null
         };
 
-        this.config = Object.assign({}, defaults, opts);
+        this._config = Object.assign({}, defaults, opts);
 
         // backwards compatibility: .retina field is assigned to .hiDPI (Retina is an Apple trademark)
-        if (opts.hasOwnProperty('retina')) this.config.hiDPI = opts.retina;
+        if (opts.hasOwnProperty('retina')) this._config.hiDPI = opts.retina;
 
-        if (this.config.from == '' && this.config.to == '') {
+        if (this._config.from == '' && this._config.to == '') {
             console.error('Missing filenames.');
             return false;
         }
 
-        if (!this.config.canvas) {
+        if (!this._config.canvas) {
             console.error('Missing canvas node.');
             return false;
         }
 
-        this.direction = 'PAUSED';
-        this.loadedImages = 0;
-        this.totalLoaded = false;
-        this.frameCountFactor = 1;
+        this._stoped = false;
+        this._direction = 'PAUSED';
+        this._loadedImages = 0;
+        this._totalLoaded = false;
+        this._frameCountFactor = 1;
 
-        this.asyncPreloaderList = [];
+        this._asyncPreloaderList = [];
 
-        this.currentFrame = 0;
-        this.images = [];
-        this.ctx = this.config.canvas.getContext('2d');
+        this._currentFrame = 0;
+        this._images = [];
+        this._ctx = this._config.canvas.getContext('2d');
 
-        var s = this.parseSequence(this.config.from, this.config.to);
-        this.fileList = this.buildFileList(s);
+        var _sequenceParser = this._parseSequence(this._config.from, this._config.to);
+        this._fileList = this._buildFileList(_sequenceParser);
 
-        this.size(this.ctx.canvas.width, this.ctx.canvas.height);
+        this._size(this._ctx.canvas.width, this._ctx.canvas.height);
 
-        this.load();
+        this._load();
     }
 
     _createClass(Sequencer, [{
-        key: 'load',
-        value: function load() {
-            if (!this.config.asyncLoader) {
-                this.preloader();
+        key: '_load',
+        value: function _load() {
+            if (!this._config.asyncLoader) {
+                this._preloader();
             }
         }
     }, {
-        key: 'setDrawLoop',
-        value: function setDrawLoop(currentFrame, direction) {
+        key: '_setDrawLoop',
+        value: function _setDrawLoop(currentFrame, direction) {
             var _this = this;
 
-            this.clearDrawLoop();
+            this._clearDrawLoop();
 
-            if (!this.config.asyncLoader && !this.totalLoaded) return;
-            this.direction = direction;
+            if (this._stoped) {
+                return this._currentFrame = currentFrame;
+            }
+            if (!this._config.asyncLoader && !this._totalLoaded) return;
 
-            var _config = this.config,
+            this._direction = direction;
+
+            var _config = this._config,
                 fps = _config.fps,
                 timeDeltaFactor = _config.timeDeltaFactor;
 
-            var frameCount = Math.abs(this.currentFrame - currentFrame);
+            var frameCount = Math.abs(this._currentFrame - currentFrame);
             var frameCountFactor = Math.round(frameCount / fps * timeDeltaFactor);
 
-            this.frameCountFactor = frameCountFactor <= 1 ? 1 : frameCountFactor;
+            this._frameCountFactor = frameCountFactor <= 1 ? 1 : frameCountFactor;
 
-            this.drawLoop = setInterval(function () {
+            this._drawLoop = setInterval(function () {
 
-                _this.setCurrentFrameByDirection(_this.frameCountFactor);
-                _this.loaderMethodChecker();
+                _this._setCurrentFrameByDirection(_this._frameCountFactor);
+                _this._loaderMethodChecker();
 
-                frameCount -= _this.frameCountFactor;
+                frameCount -= _this._frameCountFactor;
 
                 if (frameCount <= 0) {
-                    clearInterval(_this.drawLoop);
+                    clearInterval(_this._drawLoop);
                 }
             }, 1000 / fps);
         }
     }, {
-        key: 'clearDrawLoop',
-        value: function clearDrawLoop() {
-            clearInterval(this.drawLoop);
-            clearTimeout(this.drawLoopTimeout);
+        key: '_clearDrawLoop',
+        value: function _clearDrawLoop() {
+            clearInterval(this._drawLoop);
         }
     }, {
-        key: 'setCurrentFrameByDirection',
-        value: function setCurrentFrameByDirection() {
+        key: '_setCurrentFrameByDirection',
+        value: function _setCurrentFrameByDirection() {
             var factor = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
 
-            if (this.direction === 'FORWARD') this.currentFrame += factor;
-            if (this.direction === 'REVERSE') this.currentFrame -= factor;
-            if (this.direction != 'PAUSED') this.config.initFrameDraw = true;
+            if (this._direction === 'FORWARD') this._currentFrame += factor;
+            if (this._direction === 'REVERSE') this._currentFrame -= factor;
+            if (this._direction != 'PAUSED') this._config.initFrameDraw = true;
 
-            var imagesCount = this.fileList.length - 1;
-            this.currentFrame = this.currentFrame < 0 ? 0 : this.currentFrame > imagesCount ? imagesCount : this.currentFrame;
+            var imagesCount = this._fileList.length - 1;
+            this._currentFrame = this._currentFrame < 0 ? 0 : this._currentFrame > imagesCount ? imagesCount : this._currentFrame;
         }
     }, {
-        key: 'loaderMethodChecker',
-        value: function loaderMethodChecker() {
-            this.config.asyncLoader && this.asyncLoadedChecker();
-            !this.config.asyncLoader && this.drawImage();
+        key: '_loaderMethodChecker',
+        value: function _loaderMethodChecker() {
+            this._config.asyncLoader && this._asyncLoadedChecker();
+            !this._config.asyncLoader && this._drawImage();
         }
     }, {
-        key: 'asyncLoadedChecker',
-        value: function asyncLoadedChecker() {
-            var image = this.images[this.currentFrame];
+        key: '_asyncLoadedChecker',
+        value: function _asyncLoadedChecker() {
+            var image = this._images[this._currentFrame];
 
-            if (!this.config.initFrameDraw) {
-                this.frameLoader(this.currentFrame);
+            if (!this._config.initFrameDraw) {
+                this._frameLoader(this._currentFrame);
             } else {
-                image && image.loaded && this.drawImage();
-                !image && this.frameLoader(this.currentFrame);
+                image && image.loaded && this._drawImage();
+                !image && this._frameLoader(this._currentFrame);
 
-                if (!this.totalLoaded) {
-                    this.asyncPreloader();
+                if (!this._totalLoaded) {
+                    this._asyncPreloader();
                 }
             }
         }
     }, {
-        key: 'frameLoader',
-        value: function frameLoader(targetFrame) {
+        key: '_frameLoader',
+        value: function _frameLoader(targetFrame) {
             var _this2 = this;
 
-            if (this.images[targetFrame]) return;
+            if (this._images[targetFrame]) return;
 
             var img = new Image();
 
             img.onload = function () {
                 img.loaded = true;
 
-                _this2.loadedImages++;
+                _this2._loadedImages++;
 
-                _this2.config.asyncLoader && _this2.config.initFrameDraw && _this2.currentFrame === targetFrame && _this2.drawImage();
-                _this2.config.imageLoadCallback && _this2.config.imageLoadCallback({ img: img, frame: targetFrame });
+                _this2._config.asyncLoader && _this2._config.initFrameDraw && _this2._currentFrame === targetFrame && _this2._drawImage();
+                _this2._config.imageLoadCallback && _this2._config.imageLoadCallback({ img: img, frame: targetFrame });
 
-                if (_this2.loadedImages === _this2.fileList.length) {
-                    _this2.loadedImagesCallback();
+                if (_this2._loadedImages === _this2._fileList.length) {
+                    _this2._loadedImagesCallback();
                 }
             };
 
@@ -3050,90 +3054,90 @@ var Sequencer = function () {
                 console.error('Error with image-id: ' + targetFrame);
             };
 
-            this.images[targetFrame] = img;
+            this._images[targetFrame] = img;
 
-            img.src = this.fileList[targetFrame];
+            img.src = this._fileList[targetFrame];
         }
     }, {
-        key: 'asyncPreloader',
-        value: function asyncPreloader() {
+        key: '_asyncPreloader',
+        value: function _asyncPreloader() {
             var _this3 = this;
 
-            var fps = this.config.fps;
+            var fps = this._config.fps;
 
 
             var preloadFrames = 5;
             var framesList = [];
 
-            clearInterval(this.asyncPreloadInterval);
+            clearInterval(this._asyncPreloadInterval);
 
             for (var iter = 1; iter < preloadFrames; iter++) {
-                if (this.currentFrame === 0) {
-                    this.direction = 'FORWARD';
+                if (this._currentFrame === 0) {
+                    this._direction = 'FORWARD';
                 }
-                if (this.currentFrame === this.fileList.length - 1) {
-                    this.direction = 'REVERSE';
+                if (this._currentFrame === this._fileList.length - 1) {
+                    this._direction = 'REVERSE';
                 }
 
-                var preloadFrame = this.direction === 'REVERSE' ? this.currentFrame - iter : this.currentFrame + iter;
+                var preloadFrame = this._direction === 'REVERSE' ? this._currentFrame - iter : this._currentFrame + iter;
 
-                if (preloadFrame < 0 || preloadFrame >= this.fileList.length) {
+                if (preloadFrame < 0 || preloadFrame >= this._fileList.length) {
                     return;
                 }
 
                 framesList.push(preloadFrame);
             }
 
-            this.asyncPreloaderList = [].concat(framesList, _toConsumableArray(this.asyncPreloaderList));
+            this._asyncPreloaderList = [].concat(framesList, _toConsumableArray(this._asyncPreloaderList));
 
-            this.asyncPreloadInterval = setInterval(function () {
-                var image = _this3.asyncPreloaderList.shift();
+            this._asyncPreloadInterval = setInterval(function () {
+                var image = _this3._asyncPreloaderList.shift();
 
                 if (!image) {
-                    return clearInterval(_this3.asyncPreloadInterval);
+                    return clearInterval(_this3._asyncPreloadInterval);
                 }
 
-                _this3.frameLoader(image);
+                _this3._frameLoader(image);
             }, 1000 / fps / 2);
         }
     }, {
-        key: 'preloader',
-        value: function preloader() {
-            for (var iter = 0; iter < this.fileList.length; iter++) {
-                this.frameLoader(iter);
+        key: '_preloader',
+        value: function _preloader() {
+            for (var iter = 0; iter < this._fileList.length; iter++) {
+                this._frameLoader(iter);
             }
         }
     }, {
-        key: 'loadedImagesCallback',
-        value: function loadedImagesCallback() {
-            this.totalLoaded = true;
-            this.config.totalLoadCallback && this.config.totalLoadCallback();
+        key: '_loadedImagesCallback',
+        value: function _loadedImagesCallback() {
+            this._totalLoaded = true;
+            this._config.totalLoadCallback && this._config.totalLoadCallback();
 
-            if (this.config.initFrameDraw) {
-                this.drawImage();
+            if (this._config.initFrameDraw) {
+                this._drawImage();
             }
         }
     }, {
-        key: 'drawImage',
-        value: function drawImage() {
-            requestAnimationFrame(this.canvasDraw.bind(this));
+        key: '_drawImage',
+        value: function _drawImage() {
+            requestAnimationFrame(this._canvasDraw.bind(this));
         }
     }, {
-        key: 'canvasDraw',
-        value: function canvasDraw() {
-            var img = this.images[this.currentFrame];
+        key: '_canvasDraw',
+        value: function _canvasDraw() {
+            var img = this._images[this._currentFrame];
 
-            if (!img || !img.loaded || this.currentDrawFrame === this.currentFrame) return;
+            if (!img || !img.loaded || this._currentDrawFrame === this._currentFrame) return;
 
-            var r = this.config.hiDPI ? window.devicePixelRatio : 1;
-            var cw = this.ctx.canvas.width / r;
-            var ch = this.ctx.canvas.height / r;
+            var r = this._config.hiDPI ? window.devicePixelRatio : 1;
+            var cw = this._ctx.canvas.width / r;
+            var ch = this._ctx.canvas.height / r;
             var ca = cw / ch;
             var ia = img.width / img.height;
             var iw = void 0,
                 ih = void 0;
 
-            if (this.config.scaleMode == 'cover') {
+            if (this._config.scaleMode == 'cover') {
                 if (ca > ia) {
                     iw = cw;
                     ih = iw / ia;
@@ -3141,7 +3145,7 @@ var Sequencer = function () {
                     ih = ch;
                     iw = ih * ia;
                 }
-            } else if (this.config.scaleMode == 'contain') {
+            } else if (this._config.scaleMode == 'contain') {
                 if (ca < ia) {
                     iw = cw;
                     ih = iw / ia;
@@ -3150,7 +3154,7 @@ var Sequencer = function () {
                     iw = ih * ia;
                 }
             } else {
-                //this.config.scaleMode == 'auto'
+                //this._config.scaleMode == 'auto'
                 iw = img.width;
                 ih = img.height;
             }
@@ -3158,27 +3162,27 @@ var Sequencer = function () {
             var ox = cw / 2 - iw / 2;
             var oy = ch / 2 - ih / 2;
 
-            this.ctx.save();
-            this.ctx.scale(r, r);
-            this.ctx.clearRect(0, 0, cw, ch); // support for images with alpha
-            this.ctx.drawImage(img, 0, 0, img.width, img.height, ~~ox, ~~oy, ~~iw, ~~ih);
-            this.ctx.restore();
+            this._ctx.save();
+            this._ctx.scale(r, r);
+            this._ctx.clearRect(0, 0, cw, ch); // support for images with alpha
+            this._ctx.drawImage(img, 0, 0, img.width, img.height, ~~ox, ~~oy, ~~iw, ~~ih);
+            this._ctx.restore();
 
-            this.currentDrawFrame = this.currentFrame;
+            this._currentDrawFrame = this._currentFrame;
         }
     }, {
-        key: 'size',
-        value: function size(w, h) {
-            var r = this.config.hiDPI ? window.devicePixelRatio : 1;
-            var c = this.ctx.canvas;
+        key: '_size',
+        value: function _size(w, h) {
+            var r = this._config.hiDPI ? window.devicePixelRatio : 1;
+            var c = this._ctx.canvas;
             c.width = w * r;
             c.height = h * r;
             c.style.width = w + 'px';
             c.style.height = h + 'px';
         }
     }, {
-        key: 'parseSequence',
-        value: function parseSequence(from, to) {
+        key: '_parseSequence',
+        value: function _parseSequence(from, to) {
             var l = Math.min(from.length, to.length);
             var i = Math.max(0, from.lastIndexOf('/'));
 
@@ -3203,8 +3207,8 @@ var Sequencer = function () {
             }
         }
     }, {
-        key: 'buildFileList',
-        value: function buildFileList(sequenceObj) {
+        key: '_buildFileList',
+        value: function _buildFileList(sequenceObj) {
             var q = [];
             var dir = sequenceObj.from > sequenceObj.to ? -1 : 1;
             for (var i = 0; i < sequenceObj.length; i++) {
@@ -3213,6 +3217,17 @@ var Sequencer = function () {
                 q.push(sequenceObj.base + num + sequenceObj.ext);
             }
             return q;
+        }
+    }, {
+        key: 'resumeDrawing',
+        value: function resumeDrawing() {
+            this._stoped = false;
+        }
+    }, {
+        key: 'stopDrawing',
+        value: function stopDrawing() {
+            this._stoped = true;
+            this._clearDrawLoop();
         }
     }]);
 
@@ -3242,9 +3257,11 @@ var Sequencer = function () {
             var progress = _ref.progress,
                 scrollDirection = _ref.scrollDirection;
 
-            var currentFrame = Math.round(progress * (sequencer.fileList.length - 1));
-            sequencer.setDrawLoop(currentFrame, scrollDirection);
+            var currentFrame = Math.round(progress * (sequencer._fileList.length - 1));
+            sequencer._setDrawLoop(currentFrame, scrollDirection);
         });
+
+        return sequencer;
     };
 });
 
@@ -3271,7 +3288,7 @@ let scene = new __WEBPACK_IMPORTED_MODULE_0_ScrollMagic___default.a.Scene({
 document.querySelector('canvas').width = innerWidth / 2
 document.querySelector('canvas').height = innerHeight / 2
 
-scene.addImageSequencer({
+window.sequenser = scene.addImageSequencer({
     canvas: document.querySelector('canvas'),
     from: './images/Aaron_Kyro_001.jpg',
     to: './images/Aaron_Kyro_503.jpg'

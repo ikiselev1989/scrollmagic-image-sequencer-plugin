@@ -23,13 +23,17 @@ let controller = new ScrollMagic.Controller()
 
 let scene = new ScrollMagic.Scene()
 
-scene.addImageSequencer({
-    canvas: document.querySelector('#canvas'), // canvas node
-    from: '/path/to/first-frame.jpg',
-    to: '/path/to/last-frame.jpg',
-})
+let sequencer = scene.addImageSequencer({
+                    canvas: document.querySelector('#canvas'), // canvas node
+                    from: '/path/to/first-frame.jpg',
+                    to: '/path/to/last-frame.jpg',
+                })
 
 scene.addTo(controller)
+
+// Methods
+sequencer.stopDrawing()
+sequencer.resumeDrawing()
 ```
 
 ## Options
@@ -51,9 +55,11 @@ scene.addTo(controller)
 > Based on [Andreas Gysin Sequencer](https://github.com/ertdfgcvb/Sequencer)
 
 ## Changes
-#### 2.1.0
+###### 2.2.0
+* Added public methods
+###### 2.1.0
 * Added initFrameDraw options
-### 2.0.0
+##### 2.0.0
 * Added true fps image render,<br/>
 * Fixed async loader
 * Added callback after loading

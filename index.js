@@ -9,7 +9,7 @@
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 2.1.0
+ * Version: 2.2.0
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -38,123 +38,125 @@ class Sequencer {
             imageLoadCallback: null
         }
 
-        this.config = Object.assign({}, defaults, opts)
+        this._config = Object.assign({}, defaults, opts)
 
         // backwards compatibility: .retina field is assigned to .hiDPI (Retina is an Apple trademark)
-        if ( opts.hasOwnProperty('retina') ) this.config.hiDPI = opts.retina
+        if ( opts.hasOwnProperty('retina') ) this._config.hiDPI = opts.retina
 
-        if ( this.config.from == '' && this.config.to == '' ) {
+        if ( this._config.from == '' && this._config.to == '' ) {
             console.error('Missing filenames.')
             return false
         }
 
-        if ( !this.config.canvas ) {
+        if ( !this._config.canvas ) {
             console.error('Missing canvas node.')
             return false
         }
 
-        this.direction        = 'PAUSED'
-        this.loadedImages     = 0
-        this.totalLoaded      = false
-        this.frameCountFactor = 1
+        this._stoped           = false
+        this._direction        = 'PAUSED'
+        this._loadedImages     = 0
+        this._totalLoaded      = false
+        this._frameCountFactor = 1
 
-        this.asyncPreloaderList = []
+        this._asyncPreloaderList = []
 
-        this.currentFrame = 0
-        this.images       = []
-        this.ctx          = this.config.canvas.getContext('2d')
+        this._currentFrame = 0
+        this._images       = []
+        this._ctx          = this._config.canvas.getContext('2d')
 
-        const s       = this.parseSequence(this.config.from, this.config.to)
-        this.fileList = this.buildFileList(s)
+        const _sequenceParser = this._parseSequence(this._config.from, this._config.to)
+        this._fileList        = this._buildFileList(_sequenceParser)
 
-        this.size(this.ctx.canvas.width, this.ctx.canvas.height)
+        this._size(this._ctx.canvas.width, this._ctx.canvas.height)
 
-        this.load()
+        this._load()
     }
 
-    load() {
-        if ( !this.config.asyncLoader ) {
-            this.preloader()
+    _load() {
+        if ( !this._config.asyncLoader ) {
+            this._preloader()
         }
     }
 
-    setDrawLoop(currentFrame, direction) {
-        this.clearDrawLoop()
+    _setDrawLoop(currentFrame, direction) {
+        this._clearDrawLoop()
 
-        if ( !this.config.asyncLoader && !this.totalLoaded ) return
-        this.direction = direction
+        if ( this._stoped ) { return this._currentFrame = currentFrame }
+        if ( !this._config.asyncLoader && !this._totalLoaded ) return
 
-        let { fps, timeDeltaFactor } = this.config
-        let frameCount               = Math.abs(this.currentFrame - currentFrame)
+        this._direction = direction
+
+        let { fps, timeDeltaFactor } = this._config
+        let frameCount               = Math.abs(this._currentFrame - currentFrame)
         let frameCountFactor         = Math.round(frameCount / fps * timeDeltaFactor)
 
-        this.frameCountFactor = frameCountFactor <= 1 ? 1 : frameCountFactor
+        this._frameCountFactor = frameCountFactor <= 1 ? 1 : frameCountFactor
 
-        this.drawLoop = setInterval(() => {
+        this._drawLoop = setInterval(() => {
 
-            this.setCurrentFrameByDirection(this.frameCountFactor)
-            this.loaderMethodChecker()
+            this._setCurrentFrameByDirection(this._frameCountFactor)
+            this._loaderMethodChecker()
 
-            frameCount -= this.frameCountFactor
+            frameCount -= this._frameCountFactor
 
             if ( frameCount <= 0 ) {
-                clearInterval(this.drawLoop)
+                clearInterval(this._drawLoop)
             }
 
         }, 1000 / fps)
     }
 
-    clearDrawLoop() {
-        clearInterval(this.drawLoop)
-        clearTimeout(this.drawLoopTimeout)
+    _clearDrawLoop() {
+        clearInterval(this._drawLoop)
     }
 
-    setCurrentFrameByDirection(factor = 1) {
-        if ( this.direction === 'FORWARD' ) this.currentFrame += factor
-        if ( this.direction === 'REVERSE' ) this.currentFrame -= factor
-        if ( this.direction != 'PAUSED' ) this.config.initFrameDraw = true
+    _setCurrentFrameByDirection(factor = 1) {
+        if ( this._direction === 'FORWARD' ) this._currentFrame += factor
+        if ( this._direction === 'REVERSE' ) this._currentFrame -= factor
+        if ( this._direction != 'PAUSED' ) this._config.initFrameDraw = true
 
-        let imagesCount   = this.fileList.length - 1
-        this.currentFrame = this.currentFrame < 0 ? 0 : this.currentFrame > imagesCount ? imagesCount : this.currentFrame
+        let imagesCount    = this._fileList.length - 1
+        this._currentFrame = this._currentFrame < 0 ? 0 : this._currentFrame > imagesCount ? imagesCount : this._currentFrame
     }
 
-    loaderMethodChecker() {
-        this.config.asyncLoader && this.asyncLoadedChecker()
-        !this.config.asyncLoader && this.drawImage()
+    _loaderMethodChecker() {
+        this._config.asyncLoader && this._asyncLoadedChecker()
+        !this._config.asyncLoader && this._drawImage()
     }
 
-    asyncLoadedChecker() {
-        let image = this.images[ this.currentFrame ]
+    _asyncLoadedChecker() {
+        let image = this._images[ this._currentFrame ]
 
-        if ( !this.config.initFrameDraw ) {
-            this.frameLoader(this.currentFrame)
+        if ( !this._config.initFrameDraw ) {
+            this._frameLoader(this._currentFrame)
         }
         else {
-            image && image.loaded && this.drawImage()
-            !image && this.frameLoader(this.currentFrame)
+            image && image.loaded && this._drawImage()
+            !image && this._frameLoader(this._currentFrame)
 
-            if ( !this.totalLoaded ) {
-                this.asyncPreloader()
+            if ( !this._totalLoaded ) {
+                this._asyncPreloader()
             }
         }
     }
 
-    frameLoader(targetFrame) {
+    _frameLoader(targetFrame) {
 
-        if ( this.images[ targetFrame ] ) return
+        if ( this._images[ targetFrame ] ) return
 
         const img = new Image()
 
         img.onload = () => {
             img.loaded = true
 
-            this.loadedImages++
+            this._loadedImages++
 
-            this.config.asyncLoader && this.config.initFrameDraw && this.currentFrame === targetFrame && this.drawImage()
-            this.config.imageLoadCallback && this.config.imageLoadCallback({ img, frame: targetFrame })
+            this._config.asyncLoader && this._config.initFrameDraw && this._currentFrame === targetFrame && this._drawImage()
+            this._config.imageLoadCallback && this._config.imageLoadCallback({ img, frame: targetFrame })
 
-            if ( this.loadedImages === this.fileList.length ) {
-                this.loadedImagesCallback()
+            if ( this._loadedImages === this._fileList.length ) {
+                this._loadedImagesCallback()
             }
         }
 
@@ -162,81 +164,81 @@ class Sequencer {
             console.error(`Error with image-id: ${targetFrame}`)
         }
 
-        this.images[ targetFrame ] = img
+        this._images[ targetFrame ] = img
 
-        img.src = this.fileList[ targetFrame ]
+        img.src = this._fileList[ targetFrame ]
     }
 
-    asyncPreloader() {
-        let { fps } = this.config
+    _asyncPreloader() {
+        let { fps } = this._config
 
         let preloadFrames = 5
         let framesList    = []
 
-        clearInterval(this.asyncPreloadInterval)
+        clearInterval(this._asyncPreloadInterval)
 
         for ( let iter = 1; iter < preloadFrames; iter++ ) {
-            if ( this.currentFrame === 0 ) {
-                this.direction = 'FORWARD'
+            if ( this._currentFrame === 0 ) {
+                this._direction = 'FORWARD'
             }
-            if ( this.currentFrame === this.fileList.length - 1 ) {
-                this.direction = 'REVERSE'
+            if ( this._currentFrame === this._fileList.length - 1 ) {
+                this._direction = 'REVERSE'
             }
 
-            let preloadFrame = this.direction === 'REVERSE' ? this.currentFrame - iter : this.currentFrame + iter
+            let preloadFrame = this._direction === 'REVERSE' ? this._currentFrame - iter : this._currentFrame + iter
 
-            if ( preloadFrame < 0 || preloadFrame >= this.fileList.length ) {
+            if ( preloadFrame < 0 || preloadFrame >= this._fileList.length ) {
                 return
             }
 
             framesList.push(preloadFrame)
         }
 
-        this.asyncPreloaderList = [ ...framesList, ...this.asyncPreloaderList ]
+        this._asyncPreloaderList = [ ...framesList, ...this._asyncPreloaderList ]
 
-        this.asyncPreloadInterval = setInterval(() => {
-            let image = this.asyncPreloaderList.shift()
+        this._asyncPreloadInterval = setInterval(() => {
+            let image = this._asyncPreloaderList.shift()
 
             if ( !image ) {
-                return clearInterval(this.asyncPreloadInterval)
+                return clearInterval(this._asyncPreloadInterval)
             }
 
-            this.frameLoader(image)
+            this._frameLoader(image)
         }, 1000 / fps / 2)
     }
 
-    preloader() {
-        for ( var iter = 0; iter < this.fileList.length; iter++ ) {
-            this.frameLoader(iter)
+    _preloader() {
+        for ( var iter = 0; iter < this._fileList.length; iter++ ) {
+            this._frameLoader(iter)
         }
     }
 
-    loadedImagesCallback() {
-        this.totalLoaded = true
-        this.config.totalLoadCallback && this.config.totalLoadCallback()
+    _loadedImagesCallback() {
+        this._totalLoaded = true
+        this._config.totalLoadCallback && this._config.totalLoadCallback()
 
-        if ( this.config.initFrameDraw ) {
-            this.drawImage()
+        if ( this._config.initFrameDraw ) {
+            this._drawImage()
         }
     }
 
-    drawImage() {
-        requestAnimationFrame(this.canvasDraw.bind(this))
+    _drawImage() {
+        requestAnimationFrame(this._canvasDraw.bind(this))
     }
 
-    canvasDraw() {
-        const img = this.images[ this.currentFrame ]
+    _canvasDraw() {
+        const img = this._images[ this._currentFrame ]
 
-        if ( !img || !img.loaded || this.currentDrawFrame === this.currentFrame ) return
+        if ( !img || !img.loaded || this._currentDrawFrame === this._currentFrame ) return
 
-        const r  = this.config.hiDPI ? window.devicePixelRatio : 1
-        const cw = this.ctx.canvas.width / r
-        const ch = this.ctx.canvas.height / r
+        const r  = this._config.hiDPI ? window.devicePixelRatio : 1
+        const cw = this._ctx.canvas.width / r
+        const ch = this._ctx.canvas.height / r
         const ca = cw / ch
         const ia = img.width / img.height
         let iw, ih
 
-        if ( this.config.scaleMode == 'cover' ) {
+        if ( this._config.scaleMode == 'cover' ) {
             if ( ca > ia ) {
                 iw = cw
                 ih = iw / ia
@@ -246,7 +248,7 @@ class Sequencer {
                 iw = ih * ia
             }
         }
-        else if ( this.config.scaleMode == 'contain' ) {
+        else if ( this._config.scaleMode == 'contain' ) {
             if ( ca < ia ) {
                 iw = cw
                 ih = iw / ia
@@ -256,7 +258,7 @@ class Sequencer {
                 iw = ih * ia
             }
         }
-        else { //this.config.scaleMode == 'auto'
+        else { //this._config.scaleMode == 'auto'
             iw = img.width
             ih = img.height
         }
@@ -264,25 +266,25 @@ class Sequencer {
         const ox = (cw / 2 - iw / 2)
         const oy = (ch / 2 - ih / 2)
 
-        this.ctx.save()
-        this.ctx.scale(r, r)
-        this.ctx.clearRect(0, 0, cw, ch)  // support for images with alpha
-        this.ctx.drawImage(img, 0, 0, img.width, img.height, ~~(ox), ~~(oy), ~~iw, ~~ih)
-        this.ctx.restore()
+        this._ctx.save()
+        this._ctx.scale(r, r)
+        this._ctx.clearRect(0, 0, cw, ch)  // support for images with alpha
+        this._ctx.drawImage(img, 0, 0, img.width, img.height, ~~(ox), ~~(oy), ~~iw, ~~ih)
+        this._ctx.restore()
 
-        this.currentDrawFrame = this.currentFrame
+        this._currentDrawFrame = this._currentFrame
     }
 
-    size(w, h) {
-        const r        = this.config.hiDPI ? window.devicePixelRatio : 1
-        const c        = this.ctx.canvas
+    _size(w, h) {
+        const r        = this._config.hiDPI ? window.devicePixelRatio : 1
+        const c        = this._ctx.canvas
         c.width        = w * r
         c.height       = h * r
         c.style.width  = w + 'px'
         c.style.height = h + 'px'
     }
 
-    parseSequence(from, to) {
+    _parseSequence(from, to) {
         const l = Math.min(from.length, to.length)
         let i   = Math.max(0, from.lastIndexOf('/'))
 
@@ -307,7 +309,7 @@ class Sequencer {
         }
     }
 
-    buildFileList(sequenceObj) {
+    _buildFileList(sequenceObj) {
         const q   = []
         const dir = sequenceObj.from > sequenceObj.to ? -1 : 1
         for ( let i = 0; i < sequenceObj.length; i++ ) {
@@ -316,6 +318,15 @@ class Sequencer {
             q.push(sequenceObj.base + num + sequenceObj.ext)
         }
         return q
+    }
+
+    resumeDrawing() {
+        this._stoped = false
+    }
+
+    stopDrawing() {
+        this._stoped = true
+        this._clearDrawLoop()
     }
 }
 
@@ -337,9 +348,11 @@ class Sequencer {
         let sequencer = new Sequencer(opt)
 
         this.on('progress', ({ progress, scrollDirection }) => {
-            let currentFrame = Math.round(progress * (sequencer.fileList.length - 1))
-            sequencer.setDrawLoop(currentFrame, scrollDirection)
+            let currentFrame = Math.round(progress * (sequencer._fileList.length - 1))
+            sequencer._setDrawLoop(currentFrame, scrollDirection)
         })
+
+        return sequencer
     }
 }))
 
