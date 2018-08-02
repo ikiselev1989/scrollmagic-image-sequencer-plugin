@@ -9,7 +9,7 @@
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 2.0.0
+ * Version: 2.1.0
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -31,6 +31,7 @@ class Sequencer {
             scaleMode: 'cover',      // can be: auto, cover, contain
             hiDPI: true,
             asyncLoader: false,
+            initFrameDraw: true,
             fps: 60,
             timeDeltaFactor: 5,
             totalLoadCallback: null,
@@ -59,7 +60,6 @@ class Sequencer {
 
         this.asyncPreloaderList = []
 
-        this.stoped       = true
         this.currentFrame = 0
         this.images       = []
         this.ctx          = this.config.canvas.getContext('2d')
@@ -82,9 +82,7 @@ class Sequencer {
         this.clearDrawLoop()
 
         if ( !this.config.asyncLoader && !this.totalLoaded ) return
-
         this.direction = direction
-        this.stoped    = this.direction === 'PAUSED'
 
         let { fps, timeDeltaFactor } = this.config
         let frameCount               = Math.abs(this.currentFrame - currentFrame)
@@ -114,6 +112,7 @@ class Sequencer {
     setCurrentFrameByDirection(factor = 1) {
         if ( this.direction === 'FORWARD' ) this.currentFrame += factor
         if ( this.direction === 'REVERSE' ) this.currentFrame -= factor
+        if ( this.direction != 'PAUSED' ) this.config.initFrameDraw = true
 
         let imagesCount   = this.fileList.length - 1
         this.currentFrame = this.currentFrame < 0 ? 0 : this.currentFrame > imagesCount ? imagesCount : this.currentFrame
@@ -127,11 +126,16 @@ class Sequencer {
     asyncLoadedChecker() {
         let image = this.images[ this.currentFrame ]
 
-        image && image.loaded && this.drawImage()
-        !image && this.frameLoader(this.currentFrame)
+        if ( !this.config.initFrameDraw ) {
+            this.frameLoader(this.currentFrame)
+        }
+        else {
+            image && image.loaded && this.drawImage()
+            !image && this.frameLoader(this.currentFrame)
 
-        if ( !this.totalLoaded ) {
-            this.asyncPreloader()
+            if ( !this.totalLoaded ) {
+                this.asyncPreloader()
+            }
         }
     }
 
@@ -146,7 +150,7 @@ class Sequencer {
 
             this.loadedImages++
 
-            this.config.asyncLoader && this.stoped && this.drawImage()
+            this.config.asyncLoader && this.config.initFrameDraw && this.currentFrame === targetFrame && this.drawImage()
             this.config.imageLoadCallback && this.config.imageLoadCallback({ img, frame: targetFrame })
 
             if ( this.loadedImages === this.fileList.length ) {
@@ -210,7 +214,10 @@ class Sequencer {
     loadedImagesCallback() {
         this.totalLoaded = true
         this.config.totalLoadCallback && this.config.totalLoadCallback()
-        this.drawImage()
+
+        if ( this.config.initFrameDraw ) {
+            this.drawImage()
+        }
     }
 
     drawImage() {

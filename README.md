@@ -41,6 +41,7 @@ scene.addTo(controller)
     scaleMode: 'cover',                         // as in CSS3, can be: auto, cover, contain
     hiDPI: true,
     asyncLoader: false,                         // async frame loader by scene progress
+    initFrameDraw: true,                        // drawing frame after sequencer init
     fps: 60,
     timeDeltaFactor: 5,                         // time compensation factor
     totalLoadCallback: () => {},                // callback after loading all frames
@@ -50,7 +51,9 @@ scene.addTo(controller)
 > Based on [Andreas Gysin Sequencer](https://github.com/ertdfgcvb/Sequencer)
 
 ## Changes
-##### 2.0.0
+#### 2.1.0
+* Added initFrameDraw options
+### 2.0.0
 * Added true fps image render,<br/>
 * Fixed async loader
 * Added callback after loading
