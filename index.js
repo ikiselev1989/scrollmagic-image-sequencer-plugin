@@ -9,7 +9,7 @@
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 2.2.0
+ * Version: 2.3.0
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -32,8 +32,7 @@ class Sequencer {
             hiDPI: true,
             asyncLoader: false,
             initFrameDraw: true,
-            fps: 60,
-            timeDeltaFactor: 5,
+            scrollEasing: 500,
             totalLoadCallback: null,
             imageLoadCallback: null
         }
@@ -87,28 +86,31 @@ class Sequencer {
 
         this._direction = direction
 
-        let { fps, timeDeltaFactor } = this._config
-        let frameCount               = Math.abs(this._currentFrame - currentFrame)
-        let frameCountFactor         = Math.round(frameCount / fps * timeDeltaFactor)
+        let { scrollEasing } = this._config
+        let frameCount            = Math.abs(this._currentFrame - currentFrame)
+        let frameCountFactor      = Math.round(frameCount / (scrollEasing / 16.6))
 
         this._frameCountFactor = frameCountFactor <= 1 ? 1 : frameCountFactor
 
-        this._drawLoop = setInterval(() => {
+        let prev = performance.now()
 
+        this._drawLoop = requestAnimationFrame(function loop(time) {
             this._setCurrentFrameByDirection(this._frameCountFactor)
             this._loaderMethodChecker()
 
             frameCount -= this._frameCountFactor
 
-            if ( frameCount <= 0 ) {
-                clearInterval(this._drawLoop)
+            if ( frameCount > 0 ) {
+                this._drawLoop = requestAnimationFrame(loop.bind(this))
             }
-
-        }, 1000 / fps)
+            else {
+                cancelAnimationFrame(this._drawLoop)
+            }
+        }.bind(this))
     }
 
     _clearDrawLoop() {
-        clearInterval(this._drawLoop)
+        cancelAnimationFrame(this._drawLoop)
     }
 
     _setCurrentFrameByDirection(factor = 1) {
@@ -170,8 +172,6 @@ class Sequencer {
     }
 
     _asyncPreloader() {
-        let { fps } = this._config
-
         let preloadFrames = 5
         let framesList    = []
 
@@ -204,7 +204,7 @@ class Sequencer {
             }
 
             this._frameLoader(image)
-        }, 1000 / fps / 2)
+        }, 33.3)
     }
 
     _preloader() {

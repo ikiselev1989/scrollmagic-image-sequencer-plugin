@@ -2881,7 +2881,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 2.2.0
+ * Version: 2.3.0
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -2906,8 +2906,7 @@ var Sequencer = function () {
             hiDPI: true,
             asyncLoader: false,
             initFrameDraw: true,
-            fps: 60,
-            timeDeltaFactor: 5,
+            scrollEasing: 500,
             totalLoadCallback: null,
             imageLoadCallback: null
         };
@@ -2957,8 +2956,6 @@ var Sequencer = function () {
     }, {
         key: '_setDrawLoop',
         value: function _setDrawLoop(currentFrame, direction) {
-            var _this = this;
-
             this._clearDrawLoop();
 
             if (this._stoped) {
@@ -2968,31 +2965,32 @@ var Sequencer = function () {
 
             this._direction = direction;
 
-            var _config = this._config,
-                fps = _config.fps,
-                timeDeltaFactor = _config.timeDeltaFactor;
+            var scrollEasing = this._config.scrollEasing;
 
             var frameCount = Math.abs(this._currentFrame - currentFrame);
-            var frameCountFactor = Math.round(frameCount / fps * timeDeltaFactor);
+            var frameCountFactor = Math.round(frameCount / (scrollEasing / 16.6));
 
             this._frameCountFactor = frameCountFactor <= 1 ? 1 : frameCountFactor;
 
-            this._drawLoop = setInterval(function () {
+            var prev = performance.now();
 
-                _this._setCurrentFrameByDirection(_this._frameCountFactor);
-                _this._loaderMethodChecker();
+            this._drawLoop = requestAnimationFrame(function loop(time) {
+                this._setCurrentFrameByDirection(this._frameCountFactor);
+                this._loaderMethodChecker();
 
-                frameCount -= _this._frameCountFactor;
+                frameCount -= this._frameCountFactor;
 
-                if (frameCount <= 0) {
-                    clearInterval(_this._drawLoop);
+                if (frameCount > 0) {
+                    this._drawLoop = requestAnimationFrame(loop.bind(this));
+                } else {
+                    cancelAnimationFrame(this._drawLoop);
                 }
-            }, 1000 / fps);
+            }.bind(this));
         }
     }, {
         key: '_clearDrawLoop',
         value: function _clearDrawLoop() {
-            clearInterval(this._drawLoop);
+            cancelAnimationFrame(this._drawLoop);
         }
     }, {
         key: '_setCurrentFrameByDirection',
@@ -3031,7 +3029,7 @@ var Sequencer = function () {
     }, {
         key: '_frameLoader',
         value: function _frameLoader(targetFrame) {
-            var _this2 = this;
+            var _this = this;
 
             if (this._images[targetFrame]) return;
 
@@ -3040,13 +3038,13 @@ var Sequencer = function () {
             img.onload = function () {
                 img.loaded = true;
 
-                _this2._loadedImages++;
+                _this._loadedImages++;
 
-                _this2._config.asyncLoader && _this2._config.initFrameDraw && _this2._currentFrame === targetFrame && _this2._drawImage();
-                _this2._config.imageLoadCallback && _this2._config.imageLoadCallback({ img: img, frame: targetFrame });
+                _this._config.asyncLoader && _this._config.initFrameDraw && _this._currentFrame === targetFrame && _this._drawImage();
+                _this._config.imageLoadCallback && _this._config.imageLoadCallback({ img: img, frame: targetFrame });
 
-                if (_this2._loadedImages === _this2._fileList.length) {
-                    _this2._loadedImagesCallback();
+                if (_this._loadedImages === _this._fileList.length) {
+                    _this._loadedImagesCallback();
                 }
             };
 
@@ -3061,10 +3059,7 @@ var Sequencer = function () {
     }, {
         key: '_asyncPreloader',
         value: function _asyncPreloader() {
-            var _this3 = this;
-
-            var fps = this._config.fps;
-
+            var _this2 = this;
 
             var preloadFrames = 5;
             var framesList = [];
@@ -3091,14 +3086,14 @@ var Sequencer = function () {
             this._asyncPreloaderList = [].concat(framesList, _toConsumableArray(this._asyncPreloaderList));
 
             this._asyncPreloadInterval = setInterval(function () {
-                var image = _this3._asyncPreloaderList.shift();
+                var image = _this2._asyncPreloaderList.shift();
 
                 if (!image) {
-                    return clearInterval(_this3._asyncPreloadInterval);
+                    return clearInterval(_this2._asyncPreloadInterval);
                 }
 
-                _this3._frameLoader(image);
-            }, 1000 / fps / 2);
+                _this2._frameLoader(image);
+            }, 33.3);
         }
     }, {
         key: '_preloader',
@@ -3281,7 +3276,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 let controller = new __WEBPACK_IMPORTED_MODULE_0_ScrollMagic___default.a.Controller()
 let scene = new __WEBPACK_IMPORTED_MODULE_0_ScrollMagic___default.a.Scene({
-    duration: '2500%',
+    duration: '1509%',
     triggerHook: 1
 })
 

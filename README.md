@@ -46,8 +46,7 @@ sequencer.resumeDrawing()
     hiDPI: true,
     asyncLoader: false,                         // async frame loader by scene progress
     initFrameDraw: true,                        // drawing frame after sequencer init
-    fps: 60,
-    timeDeltaFactor: 5,                         // time compensation factor
+    scrollEasing: 500,                          // easing for smooth scrolling ( ms )
     totalLoadCallback: () => {},                // callback after loading all frames
     imageLoadCallback: ({ img, frame }) => {}   // callback after loading each frame
 }
@@ -55,6 +54,10 @@ sequencer.resumeDrawing()
 > Based on [Andreas Gysin Sequencer](https://github.com/ertdfgcvb/Sequencer)
 
 ## Changes
+###### 2.3.0
+* Fixed image render (60fps!)
+* Added "scrollEasing" option
+* Deprecated "fps" & "timeDeltaFactor" options
 ###### 2.2.0
 * Added public methods
 ###### 2.1.0
