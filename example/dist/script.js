@@ -2881,7 +2881,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 2.3.0
+ * Version: 2.4.0
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -2967,23 +2967,23 @@ var Sequencer = function () {
 
             var scrollEasing = this._config.scrollEasing;
 
-            var frameCount = Math.abs(this._currentFrame - currentFrame);
-            var frameCountFactor = Math.round(frameCount / (scrollEasing / 16.6));
 
-            this._frameCountFactor = frameCountFactor <= 1 ? 1 : frameCountFactor;
-
-            var prev = performance.now();
+            var now = performance.now();
 
             this._drawLoop = requestAnimationFrame(function loop(time) {
+                var timeDelta = Math.floor(time - now);
+                var frameCount = Math.abs(this._currentFrame - currentFrame);
+                var frameCountFactor = Math.round(frameCount / (scrollEasing / timeDelta));
+
+                this._frameCountFactor = frameCountFactor < 1 ? 1 : frameCountFactor;
+
                 this._setCurrentFrameByDirection(this._frameCountFactor);
                 this._loaderMethodChecker();
 
-                frameCount -= this._frameCountFactor;
+                if (this._currentFrame != currentFrame) {
+                    now = performance.now();
 
-                if (frameCount > 0) {
                     this._drawLoop = requestAnimationFrame(loop.bind(this));
-                } else {
-                    cancelAnimationFrame(this._drawLoop);
                 }
             }.bind(this));
         }
@@ -3275,18 +3275,18 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 
 let controller = new __WEBPACK_IMPORTED_MODULE_0_ScrollMagic___default.a.Controller()
-let scene = new __WEBPACK_IMPORTED_MODULE_0_ScrollMagic___default.a.Scene({
-    duration: '1509%',
+let scene      = new __WEBPACK_IMPORTED_MODULE_0_ScrollMagic___default.a.Scene({
+    duration: '972%',
     triggerHook: 1
 })
 
-document.querySelector('canvas').width = innerWidth / 2
+document.querySelector('canvas').width  = innerWidth / 2
 document.querySelector('canvas').height = innerHeight / 2
 
 window.sequenser = scene.addImageSequencer({
     canvas: document.querySelector('canvas'),
-    from: './images/Aaron_Kyro_001.jpg',
-    to: './images/Aaron_Kyro_503.jpg'
+    from: './images/animatic/animatic_001.jpg',
+    to: './images/animatic/animatic_486.jpg'
 })
 
 scene.addTo(controller)

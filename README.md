@@ -54,16 +54,22 @@ sequencer.resumeDrawing()
 > Based on [Andreas Gysin Sequencer](https://github.com/ertdfgcvb/Sequencer)
 
 ## Changes
-###### 2.3.0
+#### 2.4.0
+* Update frame render algorithm
+
+2.3.0
 * Fixed image render (60fps!)
 * Added "scrollEasing" option
 * Deprecated "fps" & "timeDeltaFactor" options
-###### 2.2.0
+
+2.2.0
 * Added public methods
-###### 2.1.0
+
+2.1.0
 * Added initFrameDraw options
-##### 2.0.0
-* Added true fps image render,<br/>
+
+2.0.0
+* Added true fps image render
 * Fixed async loader
 * Added callback after loading
 * ... a lot of code refactoring
