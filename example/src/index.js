@@ -3,7 +3,7 @@ import '../../index.min'
 
 let controller = new ScrollMagic.Controller()
 let scene      = new ScrollMagic.Scene({
-    duration: '1006%',
+    duration: '2012%',
     triggerHook: 1
 })
 

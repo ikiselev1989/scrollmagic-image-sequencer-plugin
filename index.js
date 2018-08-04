@@ -9,7 +9,7 @@
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 2.4.0
+ * Version: 2.4.1
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -88,7 +88,8 @@ class Sequencer {
 
         let { scrollEasing } = this._config
 
-        let now = performance.now()
+        let now      = performance.now()
+        let timeLaps = 0
 
         this._drawLoop = requestAnimationFrame(function loop(time) {
             let timeDelta        = Math.floor(time - now)
@@ -97,12 +98,12 @@ class Sequencer {
 
             this._frameCountFactor = frameCountFactor < 1 ? 1 : frameCountFactor
 
+            timeLaps = timeDelta / ((frameCount / this._frameCountFactor) * timeDelta)
+
             this._setCurrentFrameByDirection(this._frameCountFactor)
             this._loaderMethodChecker()
 
-            if ( this._currentFrame != currentFrame ) {
-                now = performance.now()
-
+            if ( timeLaps < 1 ) {
                 this._drawLoop = requestAnimationFrame(loop.bind(this))
             }
         }.bind(this))

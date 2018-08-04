@@ -2969,6 +2969,7 @@ var Sequencer = function () {
 
 
             var now = performance.now();
+            var timeLaps = 0;
 
             this._drawLoop = requestAnimationFrame(function loop(time) {
                 var timeDelta = Math.floor(time - now);
@@ -2977,12 +2978,12 @@ var Sequencer = function () {
 
                 this._frameCountFactor = frameCountFactor < 1 ? 1 : frameCountFactor;
 
+                timeLaps = timeDelta / (frameCount / this._frameCountFactor * timeDelta);
+
                 this._setCurrentFrameByDirection(this._frameCountFactor);
                 this._loaderMethodChecker();
 
-                if (this._currentFrame != currentFrame) {
-                    now = performance.now();
-
+                if (timeLaps < 1) {
                     this._drawLoop = requestAnimationFrame(loop.bind(this));
                 }
             }.bind(this));
@@ -3276,7 +3277,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 let controller = new __WEBPACK_IMPORTED_MODULE_0_ScrollMagic___default.a.Controller()
 let scene      = new __WEBPACK_IMPORTED_MODULE_0_ScrollMagic___default.a.Scene({
-    duration: '1006%',
+    duration: '2012%',
     triggerHook: 1
 })
 
