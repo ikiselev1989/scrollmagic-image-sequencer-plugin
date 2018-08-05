@@ -2881,7 +2881,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 2.4.3
+ * Version: 2.4.4
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -2907,6 +2907,7 @@ var Sequencer = function () {
             asyncLoader: false,
             initFrameDraw: true,
             scrollEasing: 500,
+            scrollBehaviorSmooth: true,
             totalLoadCallback: null,
             imageLoadCallback: null
         };
@@ -2935,11 +2936,12 @@ var Sequencer = function () {
         this._asyncPreloaderList = [];
 
         this._currentFrame = 0;
+        this._lastFrameQuery = 0;
         this._images = [];
         this._ctx = this._config.canvas.getContext('2d');
 
-        var _sequenceParser = this._parseSequence(this._config.from, this._config.to);
-        this._fileList = this._buildFileList(_sequenceParser);
+        var sequenceParser = this._parseSequence(this._config.from, this._config.to);
+        this._fileList = this._buildFileList(sequenceParser);
 
         this._size(this._ctx.canvas.width, this._ctx.canvas.height);
 
@@ -2970,6 +2972,14 @@ var Sequencer = function () {
 
             this._direction = direction;
 
+            var lastFrameDiff = Math.abs(this._lastFrameQuery - currentFrame);
+            this._lastFrameQuery = currentFrame;
+
+            if (!this._config.scrollBehaviorSmooth && lastFrameDiff > this._fileList.length * 0.1) {
+                this._currentFrame = currentFrame;
+                return this._drawImage();
+            }
+
             var scrollEasing = this._config.scrollEasing;
 
 
@@ -2979,6 +2989,7 @@ var Sequencer = function () {
             this._drawLoop = requestAnimationFrame(function loop(time) {
                 var timeDelta = Math.floor(time - now);
                 var frameCount = Math.abs(this._currentFrame - currentFrame);
+
                 var frameCountFactor = Math.round(frameCount / (scrollEasing / timeDelta));
 
                 this._frameCountFactor = frameCountFactor < 1 ? 1 : frameCountFactor;
@@ -3261,7 +3272,8 @@ var Sequencer = function () {
 
         this.on('progress', function (_ref) {
             var progress = _ref.progress,
-                scrollDirection = _ref.scrollDirection;
+                scrollDirection = _ref.scrollDirection,
+                type = _ref.type;
 
             var currentFrame = Math.round(progress * (sequencer._fileList.length - 1));
             sequencer._setDrawLoop(currentFrame, scrollDirection);
@@ -3298,6 +3310,7 @@ window.sequencer = scene.addImageSequencer({
     canvas: document.querySelector('canvas'),
     from: './images/Aaron_Kyro_001.jpg',
     to: './images/Aaron_Kyro_503.jpg',
+    scrollBehaviorSmooth: false
 })
 
 scene.addTo(controller)

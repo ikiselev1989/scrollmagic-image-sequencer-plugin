@@ -9,7 +9,7 @@
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 2.4.3
+ * Version: 2.4.4
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -33,6 +33,7 @@ class Sequencer {
             asyncLoader: false,
             initFrameDraw: true,
             scrollEasing: 500,
+            scrollBehaviorSmooth: true,
             totalLoadCallback: null,
             imageLoadCallback: null
         }
@@ -60,12 +61,13 @@ class Sequencer {
 
         this._asyncPreloaderList = []
 
-        this._currentFrame = 0
-        this._images       = []
-        this._ctx          = this._config.canvas.getContext('2d')
+        this._currentFrame   = 0
+        this._lastFrameQuery = 0
+        this._images         = []
+        this._ctx            = this._config.canvas.getContext('2d')
 
-        const _sequenceParser = this._parseSequence(this._config.from, this._config.to)
-        this._fileList        = this._buildFileList(_sequenceParser)
+        const sequenceParser = this._parseSequence(this._config.from, this._config.to)
+        this._fileList       = this._buildFileList(sequenceParser)
 
         this._size(this._ctx.canvas.width, this._ctx.canvas.height)
 
@@ -92,14 +94,23 @@ class Sequencer {
 
         this._direction = direction
 
+        let lastFrameDiff    = Math.abs(this._lastFrameQuery - currentFrame)
+        this._lastFrameQuery = currentFrame
+
+        if ( !this._config.scrollBehaviorSmooth && lastFrameDiff > this._fileList.length * 0.1 ) {
+            this._currentFrame = currentFrame
+            return this._drawImage()
+        }
+
         let { scrollEasing } = this._config
 
         let now      = performance.now()
         let timeLaps = 0
 
         this._drawLoop = requestAnimationFrame(function loop(time) {
-            let timeDelta        = Math.floor(time - now)
-            let frameCount       = Math.abs(this._currentFrame - currentFrame)
+            let timeDelta  = Math.floor(time - now)
+            let frameCount = Math.abs(this._currentFrame - currentFrame)
+
             let frameCountFactor = Math.round(frameCount / (scrollEasing / timeDelta))
 
             this._frameCountFactor = frameCountFactor < 1 ? 1 : frameCountFactor
@@ -329,7 +340,7 @@ class Sequencer {
         this._clearDrawLoop()
     }
 
-    resize(width, height){
+    resize(width, height) {
         if ( !width || !height ) {
             return console.error('resize "width" or "height" missed')
         }
@@ -356,7 +367,7 @@ class Sequencer {
     ScrollMagic.Scene.prototype.addImageSequencer = function (opt) {
         let sequencer = new Sequencer(opt)
 
-        this.on('progress', ({ progress, scrollDirection }) => {
+        this.on('progress', ({ progress, scrollDirection, type }) => {
             let currentFrame = Math.round(progress * (sequencer._fileList.length - 1))
             sequencer._setDrawLoop(currentFrame, scrollDirection)
         })

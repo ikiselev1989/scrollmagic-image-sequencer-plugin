@@ -14,6 +14,7 @@ window.sequencer = scene.addImageSequencer({
     canvas: document.querySelector('canvas'),
     from: './images/Aaron_Kyro_001.jpg',
     to: './images/Aaron_Kyro_503.jpg',
+    scrollBehaviorSmooth: false
 })
 
 scene.addTo(controller)
