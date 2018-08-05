@@ -2881,7 +2881,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 2.4.0
+ * Version: 2.4.2
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -2927,7 +2927,7 @@ var Sequencer = function () {
         }
 
         this._stoped = false;
-        this._direction = 'PAUSED';
+        this._direction = 'INIT';
         this._loadedImages = 0;
         this._totalLoaded = false;
         this._frameCountFactor = 1;
@@ -2951,6 +2951,8 @@ var Sequencer = function () {
         value: function _load() {
             if (!this._config.asyncLoader) {
                 this._preloader();
+            } else {
+                this._asyncPreloader();
             }
         }
     }, {
@@ -2961,7 +2963,10 @@ var Sequencer = function () {
             if (this._stoped) {
                 return this._currentFrame = currentFrame;
             }
-            if (!this._config.asyncLoader && !this._totalLoaded) return;
+
+            if (this._direction === 'INIT') {
+                return this._direction = direction;
+            }
 
             this._direction = direction;
 
@@ -3016,15 +3021,11 @@ var Sequencer = function () {
         value: function _asyncLoadedChecker() {
             var image = this._images[this._currentFrame];
 
-            if (!this._config.initFrameDraw) {
-                this._frameLoader(this._currentFrame);
-            } else {
-                image && image.loaded && this._drawImage();
-                !image && this._frameLoader(this._currentFrame);
+            image && image.loaded && this._drawImage();
+            !image && this._frameLoader(this._currentFrame);
 
-                if (!this._totalLoaded) {
-                    this._asyncPreloader();
-                }
+            if (!this._totalLoaded) {
+                this._asyncPreloader();
             }
         }
     }, {
@@ -3041,7 +3042,10 @@ var Sequencer = function () {
 
                 _this._loadedImages++;
 
-                _this._config.asyncLoader && _this._config.initFrameDraw && _this._currentFrame === targetFrame && _this._drawImage();
+                if (_this._config.initFrameDraw && targetFrame === 0) {
+                    _this._drawImage();
+                }
+
                 _this._config.imageLoadCallback && _this._config.imageLoadCallback({ img: img, frame: targetFrame });
 
                 if (_this._loadedImages === _this._fileList.length) {
@@ -3062,7 +3066,7 @@ var Sequencer = function () {
         value: function _asyncPreloader() {
             var _this2 = this;
 
-            var preloadFrames = 5;
+            var preloadFrames = Math.round(this._config.scrollEasing / 16.6);
             var framesList = [];
 
             clearInterval(this._asyncPreloadInterval);
@@ -3108,10 +3112,6 @@ var Sequencer = function () {
         value: function _loadedImagesCallback() {
             this._totalLoaded = true;
             this._config.totalLoadCallback && this._config.totalLoadCallback();
-
-            if (this._config.initFrameDraw) {
-                this._drawImage();
-            }
         }
     }, {
         key: '_drawImage',
@@ -3277,7 +3277,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 let controller = new __WEBPACK_IMPORTED_MODULE_0_ScrollMagic___default.a.Controller()
 let scene      = new __WEBPACK_IMPORTED_MODULE_0_ScrollMagic___default.a.Scene({
-    duration: '2012%',
+    duration: '1509%',
     triggerHook: 1
 })
 
@@ -3287,7 +3287,7 @@ document.querySelector('canvas').height = innerHeight / 2
 window.sequenser = scene.addImageSequencer({
     canvas: document.querySelector('canvas'),
     from: './images/Aaron_Kyro_001.jpg',
-    to: './images/Aaron_Kyro_503.jpg'
+    to: './images/Aaron_Kyro_503.jpg',
 })
 
 scene.addTo(controller)

@@ -9,7 +9,7 @@
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 2.4.1
+ * Version: 2.4.2
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -53,7 +53,7 @@ class Sequencer {
         }
 
         this._stoped           = false
-        this._direction        = 'PAUSED'
+        this._direction        = 'INIT'
         this._loadedImages     = 0
         this._totalLoaded      = false
         this._frameCountFactor = 1
@@ -76,13 +76,19 @@ class Sequencer {
         if ( !this._config.asyncLoader ) {
             this._preloader()
         }
+        else {
+            this._asyncPreloader()
+        }
     }
 
     _setDrawLoop(currentFrame, direction) {
         this._clearDrawLoop()
 
         if ( this._stoped ) { return this._currentFrame = currentFrame }
-        if ( !this._config.asyncLoader && !this._totalLoaded ) return
+
+        if ( this._direction === 'INIT' ) {
+            return this._direction = direction
+        }
 
         this._direction = direction
 
@@ -130,16 +136,11 @@ class Sequencer {
     _asyncLoadedChecker() {
         let image = this._images[ this._currentFrame ]
 
-        if ( !this._config.initFrameDraw ) {
-            this._frameLoader(this._currentFrame)
-        }
-        else {
-            image && image.loaded && this._drawImage()
-            !image && this._frameLoader(this._currentFrame)
+        image && image.loaded && this._drawImage()
+        !image && this._frameLoader(this._currentFrame)
 
-            if ( !this._totalLoaded ) {
-                this._asyncPreloader()
-            }
+        if ( !this._totalLoaded ) {
+            this._asyncPreloader()
         }
     }
 
@@ -154,7 +155,10 @@ class Sequencer {
 
             this._loadedImages++
 
-            this._config.asyncLoader && this._config.initFrameDraw && this._currentFrame === targetFrame && this._drawImage()
+            if ( this._config.initFrameDraw && targetFrame === 0 ) {
+                this._drawImage()
+            }
+
             this._config.imageLoadCallback && this._config.imageLoadCallback({ img, frame: targetFrame })
 
             if ( this._loadedImages === this._fileList.length ) {
@@ -172,7 +176,7 @@ class Sequencer {
     }
 
     _asyncPreloader() {
-        let preloadFrames = 5
+        let preloadFrames = Math.round(this._config.scrollEasing / 16.6)
         let framesList    = []
 
         clearInterval(this._asyncPreloadInterval)
@@ -216,10 +220,6 @@ class Sequencer {
     _loadedImagesCallback() {
         this._totalLoaded = true
         this._config.totalLoadCallback && this._config.totalLoadCallback()
-
-        if ( this._config.initFrameDraw ) {
-            this._drawImage()
-        }
     }
 
     _drawImage() {

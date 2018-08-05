@@ -54,7 +54,10 @@ sequencer.resumeDrawing()
 > Based on [Andreas Gysin Sequencer](https://github.com/ertdfgcvb/Sequencer)
 
 ## Changes
-#### 2.4.1
+#### 2.4.2
+* Fixed "initFrameDraw" option`s bugs
+
+2.4.1
 * Fixed some drawing issues
 
 2.4.0
