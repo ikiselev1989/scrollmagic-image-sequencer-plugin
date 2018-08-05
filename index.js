@@ -9,7 +9,7 @@
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 2.4.2
+ * Version: 2.4.3
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -229,7 +229,7 @@ class Sequencer {
     _canvasDraw() {
         const img = this._images[ this._currentFrame ]
 
-        if ( !img || !img.loaded || this._currentDrawFrame === this._currentFrame ) return
+        if ( !img || !img.loaded ) return
 
         const r  = this._config.hiDPI ? window.devicePixelRatio : 1
         const cw = this._ctx.canvas.width / r
@@ -327,6 +327,15 @@ class Sequencer {
     stopDrawing() {
         this._stoped = true
         this._clearDrawLoop()
+    }
+
+    resize(width, height){
+        if ( !width || !height ) {
+            return console.error('resize "width" or "height" missed')
+        }
+
+        this._size(width, height)
+        this._drawImage()
     }
 }
 

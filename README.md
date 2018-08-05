@@ -2,7 +2,7 @@
 Progress-sync image sequencer for Scrollmagic Scene
 
 
-## Usage
+### Usage
 * install Scrollmagic
 ```
 npm i --save scrollmagic
@@ -34,9 +34,10 @@ scene.addTo(controller)
 // Methods
 sequencer.stopDrawing()
 sequencer.resumeDrawing()
+sequencer.resize(width, height)
 ```
 
-## Options
+### Options
 ```javascript
 {
     canvas: null,                               // canvas node
@@ -53,29 +54,33 @@ sequencer.resumeDrawing()
 ```
 > Based on [Andreas Gysin Sequencer](https://github.com/ertdfgcvb/Sequencer)
 
-## Changes
-#### 2.4.2
-* Fixed "initFrameDraw" option`s bugs
+### Changes
+### Changes
+**2.4.3**<br/>
+Added "resize" public method
 
-2.4.1
-* Fixed some drawing issues
+**2.4.2**<br/>
+Fixed "initFrameDraw" option`s bugs
 
-2.4.0
-* Update frame render algorithm
+**2.4.1**<br/>
+Fixed some drawing issues
 
-2.3.0
-* Fixed image render (60fps!)
-* Added "scrollEasing" option
-* Deprecated "fps" & "timeDeltaFactor" options
+**2.4.0**<br/>
+Update frame render algorithm
 
-2.2.0
-* Added public methods
+**2.3.0**<br/>
+Fixed image render (60fps!)<br/>
+Added "scrollEasing" option<br/>
+Deprecated "fps" & "timeDeltaFactor" options
 
-2.1.0
-* Added initFrameDraw options
+**2.2.0**<br/>
+Added public methods
 
-2.0.0
-* Added true fps image render
-* Fixed async loader
-* Added callback after loading
-* ... a lot of code refactoring
+**2.1.0**<br/>
+Added initFrameDraw options
+
+**2.0.0**<br/>
+Added true fps image render<br/>
+Fixed async loader<br/>
+Added callback after loading<br/>
+... a lot of code refactoring

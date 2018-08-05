@@ -10,7 +10,7 @@ let scene      = new ScrollMagic.Scene({
 document.querySelector('canvas').width  = innerWidth / 2
 document.querySelector('canvas').height = innerHeight / 2
 
-window.sequenser = scene.addImageSequencer({
+window.sequencer = scene.addImageSequencer({
     canvas: document.querySelector('canvas'),
     from: './images/Aaron_Kyro_001.jpg',
     to: './images/Aaron_Kyro_503.jpg',

@@ -2881,7 +2881,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 2.4.2
+ * Version: 2.4.3
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -3123,7 +3123,7 @@ var Sequencer = function () {
         value: function _canvasDraw() {
             var img = this._images[this._currentFrame];
 
-            if (!img || !img.loaded || this._currentDrawFrame === this._currentFrame) return;
+            if (!img || !img.loaded) return;
 
             var r = this._config.hiDPI ? window.devicePixelRatio : 1;
             var cw = this._ctx.canvas.width / r;
@@ -3225,6 +3225,16 @@ var Sequencer = function () {
             this._stoped = true;
             this._clearDrawLoop();
         }
+    }, {
+        key: 'resize',
+        value: function resize(width, height) {
+            if (!width || !height) {
+                return console.error('resize "width" or "height" missed');
+            }
+
+            this._size(width, height);
+            this._drawImage();
+        }
     }]);
 
     return Sequencer;
@@ -3284,7 +3294,7 @@ let scene      = new __WEBPACK_IMPORTED_MODULE_0_ScrollMagic___default.a.Scene({
 document.querySelector('canvas').width  = innerWidth / 2
 document.querySelector('canvas').height = innerHeight / 2
 
-window.sequenser = scene.addImageSequencer({
+window.sequencer = scene.addImageSequencer({
     canvas: document.querySelector('canvas'),
     from: './images/Aaron_Kyro_001.jpg',
     to: './images/Aaron_Kyro_503.jpg',
