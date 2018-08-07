@@ -2879,7 +2879,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 3.0.0
+ * Version: 3.1.0
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -2930,7 +2930,8 @@ var Sequencer = function () {
         this._totalLoaded = false;
 
         this._images = [];
-        this._ctx = this._config.canvas.getContext('2d');
+
+        this._canvasInit();
 
         var sequenceParser = this._parseSequence(this._config.from, this._config.to);
         this._fileList = this._buildFileList(sequenceParser);
@@ -2939,11 +2940,37 @@ var Sequencer = function () {
         this.scene.duration(this._fileList.length * this._config.durationMultiply / 100 * document.documentElement.clientHeight);
 
         this.scene.on('progress', this._sceneProgressInit.bind(this));
-
-        this._size(this._ctx.canvas.width, this._ctx.canvas.height);
     }
 
     _createClass(Sequencer, [{
+        key: '_canvasInit',
+        value: function _canvasInit() {
+            var tagName = this._config.canvas.tagName;
+
+
+            if (tagName === 'CANVAS') {
+                this._ctx = this._config.canvas.getContext('2d');
+                this._size(this._ctx.canvas.width, this._ctx.canvas.height);
+            } else if (tagName === 'IMG') {
+                this._imgMode = true;
+            } else {
+                console.log('Wrong canvas node.');
+            }
+        }
+    }, {
+        key: '_sceneProgressInit',
+        value: function _sceneProgressInit(_ref) {
+            var progress = _ref.progress;
+
+            this._currentFrame = Math.round(progress * (this._fileList.length - 1));
+            this._preloader();
+
+            this._init = true;
+
+            this.scene.off('progress');
+            this.scene.on('progress', this._progressor.bind(this));
+        }
+    }, {
         key: '_frameLoader',
         value: function _frameLoader(targetFrame) {
             var _this = this;
@@ -2958,7 +2985,8 @@ var Sequencer = function () {
                 _this._loadedImages++;
 
                 if (_this._config.initFrameDraw && targetFrame === _this._currentFrame) {
-                    _this._canvasDraw();
+                    !_this._imgMode && _this._canvasDraw();
+                    _this._imgMode && _this._imageDraw();
                 }
 
                 _this._config.imageLoadCallback && _this._config.imageLoadCallback({ img: img, frame: targetFrame });
@@ -2986,34 +3014,27 @@ var Sequencer = function () {
             }
         }
     }, {
-        key: '_sceneProgressInit',
-        value: function _sceneProgressInit(_ref) {
-            var progress = _ref.progress;
-
-            this._currentFrame = Math.round(progress * (this._fileList.length - 1));
-            this._preloader();
-
-            this._init = true;
-
-            this.scene.off('progress');
-            this.scene.on('progress', this._drawImage.bind(this));
-        }
-    }, {
         key: '_loadedImagesCallback',
         value: function _loadedImagesCallback() {
             this._totalLoaded = true;
             this._config.totalLoadCallback && this._config.totalLoadCallback();
         }
     }, {
-        key: '_drawImage',
-        value: function _drawImage(_ref2) {
+        key: '_progressor',
+        value: function _progressor(_ref2) {
             var progress = _ref2.progress;
 
             if (this._stoped) return;
-            if (!this._init && !this._totalLoaded) return;
+            if (this._init && !this._totalLoaded) return;
 
             this._currentFrame = Math.round(progress * (this._fileList.length - 1));
-            requestAnimationFrame(this._canvasDraw.bind(this));
+            this._drawFrame();
+        }
+    }, {
+        key: '_drawFrame',
+        value: function _drawFrame() {
+            !this._imgMode && requestAnimationFrame(this._canvasDraw.bind(this));
+            this._imgMode && requestAnimationFrame(this._imageDraw.bind(this));
         }
     }, {
         key: '_canvasDraw',
@@ -3062,6 +3083,15 @@ var Sequencer = function () {
             this._ctx.restore();
 
             this._currentDrawFrame = this._currentFrame;
+        }
+    }, {
+        key: '_imageDraw',
+        value: function _imageDraw() {
+            var img = this._images[this._currentFrame];
+
+            if (!img || !img.loaded) return;
+
+            this._config.canvas.src = img.src;
         }
     }, {
         key: '_size',
@@ -3129,7 +3159,7 @@ var Sequencer = function () {
             }
 
             this._size(width, height);
-            this._drawImage();
+            this._drawFrame();
         }
     }]);
 
@@ -3171,21 +3201,32 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 
 
-let controller = new __WEBPACK_IMPORTED_MODULE_0_ScrollMagic___default.a.Controller()
-let scene      = new __WEBPACK_IMPORTED_MODULE_0_ScrollMagic___default.a.Scene({
+let controller  = new __WEBPACK_IMPORTED_MODULE_0_ScrollMagic___default.a.Controller()
+let sceneCanvas = new __WEBPACK_IMPORTED_MODULE_0_ScrollMagic___default.a.Scene({
+    triggerHook: 1
+})
+
+let sceneImage = new __WEBPACK_IMPORTED_MODULE_0_ScrollMagic___default.a.Scene({
     triggerHook: 1
 })
 
 document.querySelector('canvas').width  = innerWidth / 2
 document.querySelector('canvas').height = innerHeight / 2
 
-window.sequencer = scene.addImageSequencer({
+sceneCanvas.addImageSequencer({
     canvas: document.querySelector('canvas'),
     from: './images/Aaron_Kyro_001.jpg',
     to: './images/Aaron_Kyro_503.jpg'
 })
 
-scene.addTo(controller)
+sceneImage.addImageSequencer({
+    canvas: document.querySelector('img'),
+    from: './images/Aaron_Kyro_001.jpg',
+    to: './images/Aaron_Kyro_503.jpg'
+})
+
+sceneCanvas.addTo(controller)
+sceneImage.addTo(controller)
 
 
 /***/ })

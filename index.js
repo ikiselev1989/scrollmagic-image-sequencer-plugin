@@ -9,7 +9,7 @@
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 3.0.0
+ * Version: 3.1.0
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -58,7 +58,8 @@ class Sequencer {
         this._totalLoaded  = false
 
         this._images = []
-        this._ctx    = this._config.canvas.getContext('2d')
+
+        this._canvasInit()
 
         const sequenceParser = this._parseSequence(this._config.from, this._config.to)
         this._fileList       = this._buildFileList(sequenceParser)
@@ -68,7 +69,31 @@ class Sequencer {
 
         this.scene.on('progress', this._sceneProgressInit.bind(this))
 
-        this._size(this._ctx.canvas.width, this._ctx.canvas.height)
+    }
+
+    _canvasInit() {
+        let { tagName } = this._config.canvas
+
+        if ( tagName === 'CANVAS' ) {
+            this._ctx = this._config.canvas.getContext('2d')
+            this._size(this._ctx.canvas.width, this._ctx.canvas.height)
+        }
+        else if ( tagName === 'IMG' ) {
+            this._imgMode = true
+        }
+        else {
+            console.log('Wrong canvas node.')
+        }
+    }
+
+    _sceneProgressInit({ progress }) {
+        this._currentFrame = Math.round(progress * (this._fileList.length - 1))
+        this._preloader()
+
+        this._init = true
+
+        this.scene.off('progress')
+        this.scene.on('progress', this._progressor.bind(this))
     }
 
     _frameLoader(targetFrame) {
@@ -83,7 +108,8 @@ class Sequencer {
             this._loadedImages++
 
             if ( this._config.initFrameDraw && targetFrame === this._currentFrame ) {
-                this._canvasDraw()
+                !this._imgMode && this._canvasDraw()
+                this._imgMode && this._imageDraw()
             }
 
             this._config.imageLoadCallback && this._config.imageLoadCallback({ img, frame: targetFrame })
@@ -110,27 +136,22 @@ class Sequencer {
         }
     }
 
-    _sceneProgressInit({ progress }) {
-        this._currentFrame = Math.round(progress * (this._fileList.length - 1))
-        this._preloader()
-
-        this._init = true
-
-        this.scene.off('progress')
-        this.scene.on('progress', this._drawImage.bind(this))
-    }
-
     _loadedImagesCallback() {
         this._totalLoaded = true
         this._config.totalLoadCallback && this._config.totalLoadCallback()
     }
 
-    _drawImage({ progress }) {
+    _progressor({ progress }) {
         if ( this._stoped ) return
-        if ( !this._init && !this._totalLoaded ) return
+        if ( this._init && !this._totalLoaded ) return
 
         this._currentFrame = Math.round(progress * (this._fileList.length - 1))
-        requestAnimationFrame(this._canvasDraw.bind(this))
+        this._drawFrame()
+    }
+
+    _drawFrame() {
+        !this._imgMode && requestAnimationFrame(this._canvasDraw.bind(this))
+        this._imgMode && requestAnimationFrame(this._imageDraw.bind(this))
     }
 
     _canvasDraw() {
@@ -180,6 +201,14 @@ class Sequencer {
         this._ctx.restore()
 
         this._currentDrawFrame = this._currentFrame
+    }
+
+    _imageDraw() {
+        const img = this._images[ this._currentFrame ]
+
+        if ( !img || !img.loaded ) return
+
+        this._config.canvas.src = img.src
     }
 
     _size(w, h) {
@@ -241,7 +270,7 @@ class Sequencer {
         }
 
         this._size(width, height)
-        this._drawImage()
+        this._drawFrame()
     }
 }
 

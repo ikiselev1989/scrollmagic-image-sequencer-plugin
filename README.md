@@ -40,7 +40,7 @@ sequencer.resize(width, height)
 ### Options
 ```javascript
 {
-    canvas: null,                               // canvas node
+    canvas: null,                               // canvas node ( canvas or img )
     from: '',                                   // path to first frame
     to: '',                                     // path to last frame
     scaleMode: 'cover',                         // as in CSS3, can be: auto, cover, contain
@@ -54,6 +54,9 @@ sequencer.resize(width, height)
 > Based on [Andreas Gysin Sequencer](https://github.com/ertdfgcvb/Sequencer)
 
 ### Changes
+**3.1.0**<br />
+Added support for img tag as canvas<br />
+
 **3.0.0**<br/>
 Removed *asyncLoader*, *scrollEasing*.<br />
 Added *durationMultiply* option.

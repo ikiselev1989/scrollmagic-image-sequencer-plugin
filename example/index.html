@@ -5,21 +5,24 @@
     <title>Scrollmagic image sequener plugin</title>
     <style>
         body {
-            height: 1609vh;
+            height: 2112vh;
+            display: flex;
         }
 
-        canvas {
+        .wrapper {
             position: fixed;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            margin: auto;
+        }
+
+        canvas, img {
+            width: 50%;
         }
     </style>
 </head>
 <body>
-<canvas></canvas>
+<div class="wrapper">
+    <canvas></canvas>
+    <img>
+</div>
 <script src="./dist/script.js"></script>
 </body>
 </html>
