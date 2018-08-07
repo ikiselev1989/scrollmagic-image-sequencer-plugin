@@ -3182,8 +3182,7 @@ document.querySelector('canvas').height = innerHeight / 2
 window.sequencer = scene.addImageSequencer({
     canvas: document.querySelector('canvas'),
     from: './images/Aaron_Kyro_001.jpg',
-    to: './images/Aaron_Kyro_503.jpg',
-    scrollBehaviorSmooth: false
+    to: './images/Aaron_Kyro_503.jpg'
 })
 
 scene.addTo(controller)
