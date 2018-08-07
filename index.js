@@ -9,7 +9,7 @@
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 2.4.4
+ * Version: 3.0.0
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -23,21 +23,20 @@ function padLeft(str, char, length) {
 }
 
 class Sequencer {
-    constructor(opts) {
+    constructor(opts, scene) {
         const defaults = {
             canvas: null,
             from: '',
             to: '',
             scaleMode: 'cover',      // can be: auto, cover, contain
             hiDPI: true,
-            asyncLoader: false,
             initFrameDraw: true,
-            scrollEasing: 500,
-            scrollBehaviorSmooth: true,
+            durationMultiply: 4,
             totalLoadCallback: null,
             imageLoadCallback: null
         }
 
+        this.scene   = scene
         this._config = Object.assign({}, defaults, opts)
 
         // backwards compatibility: .retina field is assigned to .hiDPI (Retina is an Apple trademark)
@@ -53,106 +52,23 @@ class Sequencer {
             return false
         }
 
-        this._stoped           = false
-        this._direction        = 'INIT'
-        this._loadedImages     = 0
-        this._totalLoaded      = false
-        this._frameCountFactor = 1
+        this._init         = false
+        this._stoped       = false
+        this._loadedImages = 0
+        this._totalLoaded  = false
 
-        this._asyncPreloaderList = []
-
-        this._currentFrame   = 0
-        this._lastFrameQuery = 0
-        this._images         = []
-        this._ctx            = this._config.canvas.getContext('2d')
+        this._images = []
+        this._ctx    = this._config.canvas.getContext('2d')
 
         const sequenceParser = this._parseSequence(this._config.from, this._config.to)
         this._fileList       = this._buildFileList(sequenceParser)
 
+        if ( this._config.durationMultiply <= 0 ) this._config.durationMultiply = 1
+        this.scene.duration(this._fileList.length * this._config.durationMultiply / 100 * document.documentElement.clientHeight)
+
+        this.scene.on('progress', this._sceneProgressInit.bind(this))
+
         this._size(this._ctx.canvas.width, this._ctx.canvas.height)
-
-        this._load()
-    }
-
-    _load() {
-        if ( !this._config.asyncLoader ) {
-            this._preloader()
-        }
-        else {
-            this._asyncPreloader()
-        }
-    }
-
-    _setDrawLoop(currentFrame, direction) {
-        this._clearDrawLoop()
-
-        if ( this._stoped ) { return this._currentFrame = currentFrame }
-
-        if ( this._direction === 'INIT' ) {
-            return this._direction = direction
-        }
-
-        this._direction = direction
-
-        let lastFrameDiff    = Math.abs(this._lastFrameQuery - currentFrame)
-        this._lastFrameQuery = currentFrame
-
-        if ( !this._config.scrollBehaviorSmooth && lastFrameDiff > this._fileList.length * 0.1 ) {
-            this._currentFrame = currentFrame
-            return this._drawImage()
-        }
-
-        let { scrollEasing } = this._config
-
-        let now      = performance.now()
-        let timeLaps = 0
-
-        this._drawLoop = requestAnimationFrame(function loop(time) {
-            let timeDelta  = Math.floor(time - now)
-            let frameCount = Math.abs(this._currentFrame - currentFrame)
-
-            let frameCountFactor = Math.round(frameCount / (scrollEasing / timeDelta))
-
-            this._frameCountFactor = frameCountFactor < 1 ? 1 : frameCountFactor
-
-            timeLaps = timeDelta / ((frameCount / this._frameCountFactor) * timeDelta)
-
-            this._setCurrentFrameByDirection(this._frameCountFactor)
-            this._loaderMethodChecker()
-
-            if ( timeLaps < 1 ) {
-                this._drawLoop = requestAnimationFrame(loop.bind(this))
-            }
-        }.bind(this))
-    }
-
-    _clearDrawLoop() {
-        cancelAnimationFrame(this._drawLoop)
-    }
-
-    _setCurrentFrameByDirection(factor = 1) {
-        if ( this._direction === 'FORWARD' ) this._currentFrame += factor
-        if ( this._direction === 'REVERSE' ) this._currentFrame -= factor
-        if ( this._direction != 'PAUSED' ) this._config.initFrameDraw = true
-
-        let imagesCount    = this._fileList.length - 1
-        this._currentFrame = this._currentFrame < 0 ? 0 : this._currentFrame > imagesCount ? imagesCount : this._currentFrame
-    }
-
-    _loaderMethodChecker() {
-        this._config.asyncLoader && this._asyncLoadedChecker()
-        !this._config.asyncLoader && this._drawImage()
-    }
-
-    _asyncLoadedChecker() {
-        let image = this._images[ this._currentFrame ]
-
-        image && image.loaded && this._drawImage()
-        !image && this._frameLoader(this._currentFrame)
-
-        if ( !this._totalLoaded ) {
-            this._asyncPreloader()
-        }
     }
 
     _frameLoader(targetFrame) {
@@ -166,8 +82,8 @@ class Sequencer {
 
             this._loadedImages++
 
-            if ( this._config.initFrameDraw && targetFrame === 0 ) {
-                this._drawImage()
+            if ( this._config.initFrameDraw && targetFrame === this._currentFrame ) {
+                this._canvasDraw()
             }
 
             this._config.imageLoadCallback && this._config.imageLoadCallback({ img, frame: targetFrame })
@@ -186,46 +102,22 @@ class Sequencer {
         img.src = this._fileList[ targetFrame ]
     }
 
-    _asyncPreloader() {
-        let preloadFrames = Math.round(this._config.scrollEasing / 16.6)
-        let framesList    = []
-
-        clearInterval(this._asyncPreloadInterval)
-
-        for ( let iter = 1; iter < preloadFrames; iter++ ) {
-            if ( this._currentFrame === 0 ) {
-                this._direction = 'FORWARD'
-            }
-            if ( this._currentFrame === this._fileList.length - 1 ) {
-                this._direction = 'REVERSE'
-            }
-
-            let preloadFrame = this._direction === 'REVERSE' ? this._currentFrame - iter : this._currentFrame + iter
-
-            if ( preloadFrame < 0 || preloadFrame >= this._fileList.length ) {
-                return
-            }
-
-            framesList.push(preloadFrame)
-        }
-
-        this._asyncPreloaderList = [ ...framesList, ...this._asyncPreloaderList ]
-
-        this._asyncPreloadInterval = setInterval(() => {
-            let image = this._asyncPreloaderList.shift()
-
-            if ( !image ) {
-                return clearInterval(this._asyncPreloadInterval)
-            }
-
-            this._frameLoader(image)
-        }, 33.3)
-    }
-
     _preloader() {
+        this._frameLoader(this._currentFrame)
+
         for ( var iter = 0; iter < this._fileList.length; iter++ ) {
             this._frameLoader(iter)
         }
+    }
+
+    _sceneProgressInit({ progress }) {
+        this._currentFrame = Math.round(progress * (this._fileList.length - 1))
+        this._preloader()
+
+        this._init = true
+
+        this.scene.off('progress')
+        this.scene.on('progress', this._drawImage.bind(this))
     }
 
     _loadedImagesCallback() {
@@ -233,7 +125,11 @@ class Sequencer {
         this._config.totalLoadCallback && this._config.totalLoadCallback()
     }
 
-    _drawImage() {
+    _drawImage({ progress }) {
+        if ( this._stoped ) return
+        if ( !this._init && !this._totalLoaded ) return
+
+        this._currentFrame = Math.round(progress * (this._fileList.length - 1))
         requestAnimationFrame(this._canvasDraw.bind(this))
     }
 
@@ -337,7 +233,6 @@ class Sequencer {
 
     stopDrawing() {
         this._stoped = true
-        this._clearDrawLoop()
     }
 
     resize(width, height) {
@@ -365,14 +260,7 @@ class Sequencer {
     }
 }(this, function (ScrollMagic) { // 'window' change to 'this'
     ScrollMagic.Scene.prototype.addImageSequencer = function (opt) {
-        let sequencer = new Sequencer(opt)
-
-        this.on('progress', ({ progress, scrollDirection, type }) => {
-            let currentFrame = Math.round(progress * (sequencer._fileList.length - 1))
-            sequencer._setDrawLoop(currentFrame, scrollDirection)
-        })
-
-        return sequencer
+        return new Sequencer(opt, this)
     }
 }))
 

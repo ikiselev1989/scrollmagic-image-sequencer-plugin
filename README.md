@@ -45,10 +45,8 @@ sequencer.resize(width, height)
     to: '',                                     // path to last frame
     scaleMode: 'cover',                         // as in CSS3, can be: auto, cover, contain
     hiDPI: true,
-    asyncLoader: false,                         // async frame loader by scene progress
     initFrameDraw: true,                        // drawing frame after sequencer init
-    scrollEasing: 500,                          // easing for smooth scrolling ( ms )
-    scrollBehaviorSmooth: true,                 // if "false" drawing request frame if progress diff>10%
+    durationMultiply: 4,                        // sequencer scene duration multiply
     totalLoadCallback: () => {},                // callback after loading all frames
     imageLoadCallback: ({ img, frame }) => {}   // callback after loading each frame
 }
@@ -56,11 +54,8 @@ sequencer.resize(width, height)
 > Based on [Andreas Gysin Sequencer](https://github.com/ertdfgcvb/Sequencer)
 
 ### Changes
-**2.4.4**<br/>
-Added **scrollBehaviorSmooth** option
+**3.0.0**<br/>
+Removed *asyncLoader*, *scrollEasing*.<br />
+Added *durationMultiply* option.
 
-**2.4.3**<br/>
-Added **resize** public method
-
-**2.4.2**<br/>
-Fixed **initFrameDraw** option`s bugs
+*!!! version 2.x was deprecated, cause had some issue with scrolling on MacOS !!!*
