@@ -2879,7 +2879,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 3.1.0
+ * Version: 3.1.1
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -2894,6 +2894,8 @@ function padLeft(str, char, length) {
 
 var Sequencer = function () {
     function Sequencer(opts, scene) {
+        var _this = this;
+
         _classCallCheck(this, Sequencer);
 
         var defaults = {
@@ -2939,7 +2941,14 @@ var Sequencer = function () {
         if (this._config.durationMultiply <= 0) this._config.durationMultiply = 1;
         this.scene.duration(this._fileList.length * this._config.durationMultiply / 100 * document.documentElement.clientHeight);
 
-        this.scene.on('progress', this._sceneProgressInit.bind(this));
+        var init = function init(_ref) {
+            var progress = _ref.progress;
+
+            _this._sceneProgressInit(progress);
+            _this.scene.off('progress', init);
+        };
+
+        this.scene.on('progress', init);
     }
 
     _createClass(Sequencer, [{
@@ -2959,21 +2968,18 @@ var Sequencer = function () {
         }
     }, {
         key: '_sceneProgressInit',
-        value: function _sceneProgressInit(_ref) {
-            var progress = _ref.progress;
-
+        value: function _sceneProgressInit(progress) {
             this._currentFrame = Math.round(progress * (this._fileList.length - 1));
             this._preloader();
 
             this._init = true;
 
-            this.scene.off('progress');
             this.scene.on('progress', this._progressor.bind(this));
         }
     }, {
         key: '_frameLoader',
         value: function _frameLoader(targetFrame) {
-            var _this = this;
+            var _this2 = this;
 
             if (this._images[targetFrame]) return;
 
@@ -2982,17 +2988,17 @@ var Sequencer = function () {
             img.onload = function () {
                 img.loaded = true;
 
-                _this._loadedImages++;
+                _this2._loadedImages++;
 
-                if (_this._config.initFrameDraw && targetFrame === _this._currentFrame) {
-                    !_this._imgMode && _this._canvasDraw();
-                    _this._imgMode && _this._imageDraw();
+                if (_this2._config.initFrameDraw && targetFrame === _this2._currentFrame) {
+                    !_this2._imgMode && _this2._canvasDraw();
+                    _this2._imgMode && _this2._imageDraw();
                 }
 
-                _this._config.imageLoadCallback && _this._config.imageLoadCallback({ img: img, frame: targetFrame });
+                _this2._config.imageLoadCallback && _this2._config.imageLoadCallback({ img: img, frame: targetFrame });
 
-                if (_this._loadedImages === _this._fileList.length) {
-                    _this._loadedImagesCallback();
+                if (_this2._loadedImages === _this2._fileList.length) {
+                    _this2._loadedImagesCallback();
                 }
             };
 
