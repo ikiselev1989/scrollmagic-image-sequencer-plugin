@@ -2926,7 +2926,6 @@ var Sequencer = function () {
             return false;
         }
 
-        this._init = false;
         this._stoped = false;
         this._loadedImages = 0;
         this._totalLoaded = false;
@@ -2971,8 +2970,6 @@ var Sequencer = function () {
         value: function _sceneProgressInit(progress) {
             this._currentFrame = Math.round(progress * (this._fileList.length - 1));
             this._preloader();
-
-            this._init = true;
 
             this.scene.on('progress', this._progressor.bind(this));
         }
@@ -3031,7 +3028,6 @@ var Sequencer = function () {
             var progress = _ref2.progress;
 
             if (this._stoped) return;
-            if (this._init && !this._totalLoaded) return;
 
             this._currentFrame = Math.round(progress * (this._fileList.length - 1));
             this._drawFrame();

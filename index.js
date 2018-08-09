@@ -9,7 +9,7 @@
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 3.1.1
+ * Version: 3.1.2
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -52,7 +52,6 @@ class Sequencer {
             return false
         }
 
-        this._init         = false
         this._stoped       = false
         this._loadedImages = 0
         this._totalLoaded  = false
@@ -93,8 +92,6 @@ class Sequencer {
     _sceneProgressInit(progress) {
         this._currentFrame = Math.round(progress * (this._fileList.length - 1))
         this._preloader()
-
-        this._init = true
 
         this.scene.on('progress', this._progressor.bind(this))
     }
@@ -146,7 +143,6 @@ class Sequencer {
 
     _progressor({ progress }) {
         if ( this._stoped ) return
-        if ( this._init && !this._totalLoaded ) return
 
         this._currentFrame = Math.round(progress * (this._fileList.length - 1))
         this._drawFrame()
