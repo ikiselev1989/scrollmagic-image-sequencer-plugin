@@ -9,7 +9,7 @@
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 3.2.0
+ * Version: 3.2.1
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -108,9 +108,9 @@ class Sequencer {
             this._loadedImages++
 
             if ( !this._config.asyncLoader ) {
-                if ( this._loadedImages >= this._fileList.length ) return
-
-                this._frameLoader(this._loadedImages)
+                if ( this._loadedImages < this._fileList.length ) {
+                    this._frameLoader(this._loadedImages)
+                }
             }
 
             if ( this._config.initFrameDraw && targetFrame === this._currentFrame ) {
