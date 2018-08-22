@@ -43,6 +43,7 @@ sequencer.resize(width, height)
     canvas: null,                               // canvas node ( canvas or img )
     from: '',                                   // path to first frame
     to: '',                                     // path to last frame
+    asyncLoader: false,                         // sequential loading of images
     scaleMode: 'cover',                         // as in CSS3, can be: auto, cover, contain
     hiDPI: true,
     initFrameDraw: true,                        // drawing frame after sequencer init
@@ -53,7 +54,12 @@ sequencer.resize(width, height)
 ```
 > Based on [Andreas Gysin Sequencer](https://github.com/ertdfgcvb/Sequencer)
 
+**Please Star me on [GitHub](https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin)**
+
 ### Changes
+**3.2.0**<br />
+Added sequential loading of images
+
 **3.1.0**<br />
 Added support for img tag as canvas<br />
 

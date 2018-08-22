@@ -2879,7 +2879,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 3.1.1
+ * Version: 3.1.2
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -2902,6 +2902,7 @@ var Sequencer = function () {
             canvas: null,
             from: '',
             to: '',
+            asyncLoader: false,
             scaleMode: 'cover', // can be: auto, cover, contain
             hiDPI: true,
             initFrameDraw: true,
@@ -2987,6 +2988,12 @@ var Sequencer = function () {
 
                 _this2._loadedImages++;
 
+                if (!_this2._config.asyncLoader) {
+                    if (_this2._loadedImages >= _this2._fileList.length) return;
+
+                    _this2._frameLoader(_this2._loadedImages);
+                }
+
                 if (_this2._config.initFrameDraw && targetFrame === _this2._currentFrame) {
                     !_this2._imgMode && _this2._canvasDraw();
                     _this2._imgMode && _this2._imageDraw();
@@ -3012,8 +3019,10 @@ var Sequencer = function () {
         value: function _preloader() {
             this._frameLoader(this._currentFrame);
 
-            for (var iter = 0; iter < this._fileList.length; iter++) {
-                this._frameLoader(iter);
+            if (this._config.asyncLoader) {
+                for (var iter = 0; iter < this._fileList.length; iter++) {
+                    this._frameLoader(iter);
+                }
             }
         }
     }, {
@@ -3218,7 +3227,8 @@ document.querySelector('canvas').height = innerHeight / 2
 sceneCanvas.addImageSequencer({
     canvas: document.querySelector('canvas'),
     from: './images/Aaron_Kyro_001.jpg',
-    to: './images/Aaron_Kyro_503.jpg'
+    to: './images/Aaron_Kyro_503.jpg',
+    asyncLoader: true
 })
 
 sceneImage.addImageSequencer({

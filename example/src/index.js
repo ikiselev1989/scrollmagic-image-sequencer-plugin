@@ -16,7 +16,8 @@ document.querySelector('canvas').height = innerHeight / 2
 sceneCanvas.addImageSequencer({
     canvas: document.querySelector('canvas'),
     from: './images/Aaron_Kyro_001.jpg',
-    to: './images/Aaron_Kyro_503.jpg'
+    to: './images/Aaron_Kyro_503.jpg',
+    asyncLoader: true
 })
 
 sceneImage.addImageSequencer({
