@@ -45,6 +45,7 @@ sequencer.resize(width, height)
     to: '',                                     // path to last frame
     asyncLoader: false,                         // sequential loading of images
     scaleMode: 'cover',                         // as in CSS3, can be: auto, cover, contain
+    framePosition: 'center center',             // x-axis: left, right, center; y-axis: top, bottom, center
     hiDPI: true,
     initFrameDraw: true,                        // drawing frame after sequencer init
     durationMultiply: 4,                        // sequencer scene duration multiply
@@ -57,6 +58,9 @@ sequencer.resize(width, height)
 **Please Star me on [GitHub](https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin)**
 
 ### Changes
+**3.3.0**<br />
+Added *framePosition* option for cover *scaleMode*
+
 **3.2.0**<br />
 Added sequential loading of images
 

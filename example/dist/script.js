@@ -2879,7 +2879,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 3.2.0
+ * Version: 3.3.0
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -2904,6 +2904,7 @@ var Sequencer = function () {
             to: '',
             asyncLoader: false,
             scaleMode: 'cover', // can be: auto, cover, contain
+            framePosition: 'center center', // default: center center
             hiDPI: true,
             initFrameDraw: true,
             durationMultiply: 4,
@@ -3070,6 +3071,11 @@ var Sequencer = function () {
                     ih = ch;
                     iw = ih * ia;
                 }
+
+                var position = this._config.framePosition.split(' ');
+
+                var _ox = position[0] === 'center' ? cw / 2 - iw / 2 : position[0] === 'left' ? 0 : cw - iw;
+                var _oy = position[1] === 'center' ? ch / 2 - ih / 2 : position[1] === 'top' ? 0 : ch - ih;
             } else if (this._config.scaleMode == 'contain') {
                 if (ca < ia) {
                     iw = cw;
@@ -3084,8 +3090,8 @@ var Sequencer = function () {
                 ih = img.height;
             }
 
-            var ox = cw / 2 - iw / 2;
-            var oy = ch / 2 - ih / 2;
+            var ox = ox || cw / 2 - iw / 2;
+            var oy = oy || ch / 2 - ih / 2;
 
             this._ctx.save();
             this._ctx.scale(r, r);

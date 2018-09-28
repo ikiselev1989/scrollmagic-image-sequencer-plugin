@@ -9,7 +9,7 @@
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 3.2.1
+ * Version: 3.3.0
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -30,6 +30,7 @@ class Sequencer {
             to: '',
             asyncLoader: false,
             scaleMode: 'cover',      // can be: auto, cover, contain
+            framePosition: 'center center',      // default: center center
             hiDPI: true,
             initFrameDraw: true,
             durationMultiply: 4,
@@ -182,6 +183,11 @@ class Sequencer {
                 ih = ch
                 iw = ih * ia
             }
+
+            let position = this._config.framePosition.split(' ')
+
+            let ox = position[ 0 ] === 'center' ? (cw / 2 - iw / 2) : position[ 0 ] === 'left' ? 0 : cw - iw
+            let oy = position[ 1 ] === 'center' ? (ch / 2 - ih / 2) : position[ 1 ] === 'top' ? 0 : ch - ih
         }
         else if ( this._config.scaleMode == 'contain' ) {
             if ( ca < ia ) {
@@ -198,8 +204,8 @@ class Sequencer {
             ih = img.height
         }
 
-        const ox = (cw / 2 - iw / 2)
-        const oy = (ch / 2 - ih / 2)
+        let ox = ox || (cw / 2 - iw / 2)
+        let oy = oy || (ch / 2 - ih / 2)
 
         this._ctx.save()
         this._ctx.scale(r, r)
