@@ -2879,7 +2879,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 3.3.0
+ * Version: 3.3.1
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -3061,7 +3061,9 @@ var Sequencer = function () {
             var ca = cw / ch;
             var ia = img.width / img.height;
             var iw = void 0,
-                ih = void 0;
+                ih = void 0,
+                ox = void 0,
+                oy = void 0;
 
             if (this._config.scaleMode == 'cover') {
                 if (ca > ia) {
@@ -3074,8 +3076,8 @@ var Sequencer = function () {
 
                 var position = this._config.framePosition.split(' ');
 
-                var _ox = position[0] === 'center' ? cw / 2 - iw / 2 : position[0] === 'left' ? 0 : cw - iw;
-                var _oy = position[1] === 'center' ? ch / 2 - ih / 2 : position[1] === 'top' ? 0 : ch - ih;
+                ox = position[0] === 'center' ? cw / 2 - iw / 2 : position[0] === 'left' ? 0 : cw - iw;
+                oy = position[1] === 'center' ? ch / 2 - ih / 2 : position[1] === 'top' ? 0 : ch - ih;
             } else if (this._config.scaleMode == 'contain') {
                 if (ca < ia) {
                     iw = cw;
@@ -3090,8 +3092,8 @@ var Sequencer = function () {
                 ih = img.height;
             }
 
-            var ox = ox || cw / 2 - iw / 2;
-            var oy = oy || ch / 2 - ih / 2;
+            ox = ox || cw / 2 - iw / 2;
+            oy = oy || ch / 2 - ih / 2;
 
             this._ctx.save();
             this._ctx.scale(r, r);
