@@ -2879,7 +2879,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 3.3.2
+ * Version: 3.4.0
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -2907,7 +2907,6 @@ var Sequencer = function () {
             framePosition: 'center center', // default: center center
             hiDPI: true,
             initFrameDraw: true,
-            durationMultiply: 4,
             totalLoadCallback: null,
             imageLoadCallback: null
         };
@@ -2938,9 +2937,6 @@ var Sequencer = function () {
 
         var sequenceParser = this._parseSequence(this._config.from, this._config.to);
         this._fileList = this._buildFileList(sequenceParser);
-
-        if (this._config.durationMultiply <= 0) this._config.durationMultiply = 1;
-        this.scene.duration(this._fileList.length * this._config.durationMultiply / 100 * document.documentElement.clientHeight);
 
         var init = function init(_ref) {
             var progress = _ref.progress;
@@ -3223,10 +3219,12 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 let controller  = new __WEBPACK_IMPORTED_MODULE_0_ScrollMagic___default.a.Controller()
 let sceneCanvas = new __WEBPACK_IMPORTED_MODULE_0_ScrollMagic___default.a.Scene({
+    duration: '500%',
     triggerHook: 1
 })
 
 let sceneImage = new __WEBPACK_IMPORTED_MODULE_0_ScrollMagic___default.a.Scene({
+    duration: '500%',
     triggerHook: 1
 })
 

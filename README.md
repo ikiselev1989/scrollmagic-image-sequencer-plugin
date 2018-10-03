@@ -48,7 +48,6 @@ sequencer.resize(width, height)
     framePosition: 'center center',             // x-axis: left, right, center; y-axis: top, bottom, center
     hiDPI: true,
     initFrameDraw: true,                        // drawing frame after sequencer init
-    durationMultiply: 4,                        // sequencer scene duration multiply
     totalLoadCallback: () => {},                // callback after loading all frames
     imageLoadCallback: ({ img, frame }) => {}   // callback after loading each frame
 }
@@ -58,6 +57,9 @@ sequencer.resize(width, height)
 **Please Star me on [GitHub](https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin)**
 
 ### Changes
+**3.4.0**<br />
+Remove *durationMultiply* option (please set scene duration manually)
+
 **3.3.0**<br />
 Added *framePosition* option for cover *scaleMode*
 

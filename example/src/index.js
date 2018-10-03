@@ -3,10 +3,12 @@ import '../../index.min'
 
 let controller  = new ScrollMagic.Controller()
 let sceneCanvas = new ScrollMagic.Scene({
+    duration: '500%',
     triggerHook: 1
 })
 
 let sceneImage = new ScrollMagic.Scene({
+    duration: '500%',
     triggerHook: 1
 })
 
