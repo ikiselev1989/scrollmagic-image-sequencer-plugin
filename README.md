@@ -43,7 +43,8 @@ sequencer.resize(width, height)
     canvas: null,                               // canvas node ( canvas or img )
     from: '',                                   // path to first frame
     to: '',                                     // path to last frame
-    asyncLoader: false,                         // sequential loading of images
+    asyncLoader: false,                         // sequential loading of images ( false, true, number of
+                                                   frames )
     scaleMode: 'cover',                         // as in CSS3, can be: auto, cover, contain
     framePosition: 'center center',             // x-axis: left, right, center; y-axis: top, bottom, center
     hiDPI: true,
@@ -57,6 +58,9 @@ sequencer.resize(width, height)
 **Please Star me on [GitHub](https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin)**
 
 ### Changes
+**3.5.0**<br />
+Add *number of frames* value for *asyncLoader*
+
 **3.4.0**<br />
 Remove *durationMultiply* option (please set scene duration manually)
 

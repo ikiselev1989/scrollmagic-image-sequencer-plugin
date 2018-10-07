@@ -2879,7 +2879,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 3.4.0
+ * Version: 3.5.0
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -2989,6 +2989,19 @@ var Sequencer = function () {
                     if (_this2._loadedImages < _this2._fileList.length) {
                         _this2._frameLoader(_this2._loadedImages);
                     }
+                } else {
+                    var asyncFrameLength = parseInt(_this2._config.asyncLoader);
+
+                    if (asyncFrameLength && (targetFrame + 1) % asyncFrameLength === 0) {
+                        var start = targetFrame + 1;
+
+                        var end = targetFrame + asyncFrameLength + 1;
+                        end = end < _this2._fileList.length ? end : _this2._fileList.length;
+
+                        for (var iter = start; iter < end; iter++) {
+                            _this2._frameLoader(iter);
+                        }
+                    }
                 }
 
                 if (_this2._config.initFrameDraw && targetFrame === _this2._currentFrame) {
@@ -3017,7 +3030,11 @@ var Sequencer = function () {
             this._frameLoader(this._currentFrame);
 
             if (this._config.asyncLoader) {
-                for (var iter = 0; iter < this._fileList.length; iter++) {
+                var asyncFrameLength = parseInt(this._config.asyncLoader);
+
+                asyncFrameLength = asyncFrameLength || this._fileList.length;
+
+                for (var iter = 0; iter < asyncFrameLength; iter++) {
                     this._frameLoader(iter);
                 }
             }
@@ -3235,7 +3252,7 @@ sceneCanvas.addImageSequencer({
     canvas: document.querySelector('canvas'),
     from: './images/Aaron_Kyro_001.jpg',
     to: './images/Aaron_Kyro_503.jpg',
-    asyncLoader: true
+    asyncLoader: 10
 })
 
 sceneImage.addImageSequencer({

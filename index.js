@@ -9,7 +9,7 @@
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 3.4.0
+ * Version: 3.5.0
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -109,6 +109,20 @@ class Sequencer {
                     this._frameLoader(this._loadedImages)
                 }
             }
+            else {
+                let asyncFrameLength = parseInt(this._config.asyncLoader)
+
+                if ( asyncFrameLength && (targetFrame + 1) % asyncFrameLength === 0 ) {
+                    let start = targetFrame + 1
+
+                    let end = (targetFrame + asyncFrameLength + 1)
+                    end     = end < this._fileList.length ? end : this._fileList.length
+
+                    for ( var iter = start; iter < end; iter++ ) {
+                        this._frameLoader(iter)
+                    }
+                }
+            }
 
             if ( this._config.initFrameDraw && targetFrame === this._currentFrame ) {
                 !this._imgMode && this._canvasDraw()
@@ -135,7 +149,11 @@ class Sequencer {
         this._frameLoader(this._currentFrame)
 
         if ( this._config.asyncLoader ) {
-            for ( var iter = 0; iter < this._fileList.length; iter++ ) {
+            let asyncFrameLength = parseInt(this._config.asyncLoader)
+
+            asyncFrameLength = asyncFrameLength || this._fileList.length
+
+            for ( var iter = 0; iter < asyncFrameLength; iter++ ) {
                 this._frameLoader(iter)
             }
         }
