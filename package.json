@@ -28,7 +28,7 @@
     "babel-cli": "^6.26.0",
     "babel-preset-env": "^1.7.0",
     "babel-preset-minify": "^0.4.3",
-    "scrollmagic": "^2.0.5",
-    "webpack-cli": "^3.1.0"
+    "scrollmagic": "^2.0.6",
+    "webpack-cli": "^3.1.2"
   }
 }
