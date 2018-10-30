@@ -41,6 +41,7 @@ sequencer.resize(width, height)
 ```javascript
 {
     canvas: null,                               // canvas node ( canvas or img )
+    canvasContext: 'auto',                      // can be: auto, webgl, 2d
     from: '',                                   // path to first frame
     to: '',                                     // path to last frame
     asyncLoader: false,                         // sequential loading of images ( false, true, number of
@@ -55,9 +56,10 @@ sequencer.resize(width, height)
 ```
 > Based on [Andreas Gysin Sequencer](https://github.com/ertdfgcvb/Sequencer)
 
-**Please Star me on [GitHub](https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin)**
-
 ### Changes
+**3.6.0**<br />
+Add *canvasContext* option (yes, the plugin supports webgl now)
+
 **3.5.0**<br />
 Add *number of frames* value for *asyncLoader*
 

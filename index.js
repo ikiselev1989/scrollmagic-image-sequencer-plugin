@@ -9,10 +9,13 @@
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 3.5.0
+ * Version: 3.6.0
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
+
+import webglUtils from './webgl-utils/webgl-utils'
+import m4 from './webgl-utils/m4'
 
 String.prototype.repeat = String.prototype.repeat || function (n) {
         return n <= 1 ? this : (this + this.repeat(n - 1))
@@ -26,6 +29,7 @@ class Sequencer {
     constructor(opts, scene) {
         const defaults = {
             canvas: null,
+            canvasContext: 'auto', // can be: auto, webgl, 2d
             from: '',
             to: '',
             asyncLoader: false,
@@ -59,6 +63,7 @@ class Sequencer {
 
         this._images = []
 
+        this._isWebGL = true
         this._canvasInit()
 
         const sequenceParser = this._parseSequence(this._config.from, this._config.to)
@@ -72,18 +77,101 @@ class Sequencer {
         this.scene.on('progress', init)
     }
 
+    _webglInit() {
+        let program = webglUtils.createProgramFromScripts(this._ctx, [ {
+            src: 'attribute vec4 a_position;attribute vec2 a_texcoord;uniform mat4 u_matrix;uniform mat4 u_textureMatrix;varying vec2 v_texcoord;void main() {gl_Position = u_matrix * a_position;v_texcoord = (u_textureMatrix * vec4(a_texcoord, 0, 1)).xy;}',
+            type: 'x-shader/x-vertex'
+        }, {
+            src: 'precision mediump float;varying vec2 v_texcoord;uniform sampler2D u_texture;void main() {gl_FragColor = texture2D(u_texture, v_texcoord);}',
+            type: 'x-shader/x-fragment'
+        } ])
+
+        let positionLocation      = this._ctx.getAttribLocation(program, 'a_position')
+        let texcoordLocation      = this._ctx.getAttribLocation(program, 'a_texcoord')
+        let matrixLocation        = this._ctx.getUniformLocation(program, 'u_matrix')
+        let textureMatrixLocation = this._ctx.getUniformLocation(program, 'u_textureMatrix')
+        let textureLocation       = this._ctx.getUniformLocation(program, 'u_texture')
+
+        let positionBuffer = this._ctx.createBuffer()
+
+        this._ctx.bindBuffer(this._ctx.ARRAY_BUFFER, positionBuffer)
+
+        let positions = [ 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1 ]
+
+        this._ctx.bufferData(this._ctx.ARRAY_BUFFER, new Float32Array(positions), this._ctx.STATIC_DRAW)
+
+        let texcoordBuffer = this._ctx.createBuffer()
+
+        this._ctx.bindBuffer(this._ctx.ARRAY_BUFFER, texcoordBuffer)
+
+        let texcoords = [ 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1 ]
+
+        this._ctx.bufferData(this._ctx.ARRAY_BUFFER, new Float32Array(texcoords), this._ctx.STATIC_DRAW)
+
+        this._ctx.drawImage = (tex, srcX, srcY, srcWidth, srcHeight, dstX, dstY, dstWidth, dstHeight) => {
+            this._ctx.bindTexture(this._ctx.TEXTURE_2D, tex)
+            this._ctx.useProgram(program)
+            this._ctx.bindBuffer(this._ctx.ARRAY_BUFFER, positionBuffer)
+            this._ctx.enableVertexAttribArray(positionLocation)
+            this._ctx.vertexAttribPointer(positionLocation, 2, this._ctx.FLOAT, false, 0, 0)
+            this._ctx.bindBuffer(this._ctx.ARRAY_BUFFER, texcoordBuffer)
+            this._ctx.enableVertexAttribArray(texcoordLocation)
+            this._ctx.vertexAttribPointer(texcoordLocation, 2, this._ctx.FLOAT, false, 0, 0)
+
+            let matrix = m4.orthographic(0, this._ctx.canvas.width, this._ctx.canvas.height, 0, -1, 1)
+
+            matrix = m4.translate(matrix, dstX, dstY, 0)
+            matrix = m4.scale(matrix, dstWidth, dstHeight, 1)
+
+            this._ctx.uniformMatrix4fv(matrixLocation, false, matrix)
+
+            let texMatrix = m4.translation(srcX / srcWidth, srcY / srcHeight, 0)
+
+            texMatrix = m4.scale(texMatrix, 1, 1, 1)
+
+            this._ctx.uniformMatrix4fv(textureMatrixLocation, false, texMatrix)
+            this._ctx.uniform1i(textureLocation, 0)
+            this._ctx.drawArrays(this._ctx.TRIANGLES, 0, 6)
+        }
+    }
+
     _canvasInit() {
         let { tagName } = this._config.canvas
 
         if ( tagName === 'CANVAS' ) {
-            this._ctx = this._config.canvas.getContext('2d')
+            if ( this._config.canvasContext === 'auto' ) {
+                this._ctx = this._config.canvas.getContext('webgl')
+
+                if ( !this._ctx ) {
+                    this._isWebGL = false
+
+                    this._ctx = this._config.canvas.getContext('2d')
+                    console.info('Scrollmagic sequencer use 2d context')
+                }
+                else {
+                    console.info('Scrollmagic sequencer use WebGL context')
+                    this._webglInit()
+                }
+            }
+            else {
+                this._ctx = this._config.canvas.getContext(this._config.canvasContext)
+
+                if ( this._config.canvasContext === '2d' ) {
+                    this._isWebGL = false
+                    console.info('Scrollmagic sequencer use 2d context')
+                }
+                else {
+                    console.info('Scrollmagic sequencer use WebGL context')
+                }
+            }
+
             this._size(this._ctx.canvas.width, this._ctx.canvas.height)
         }
         else if ( tagName === 'IMG' ) {
             this._imgMode = true
         }
         else {
-            console.log('Wrong canvas node.')
+            console.error('Wrong canvas node.')
         }
     }
 
@@ -118,7 +206,7 @@ class Sequencer {
                     let end = (targetFrame + asyncFrameLength + 1)
                     end     = end < this._fileList.length ? end : this._fileList.length
 
-                    for ( var iter = start; iter < end; iter++ ) {
+                    for ( let iter = start; iter < end; iter++ ) {
                         this._frameLoader(iter)
                     }
                 }
@@ -153,7 +241,7 @@ class Sequencer {
 
             asyncFrameLength = asyncFrameLength || this._fileList.length
 
-            for ( var iter = 0; iter < asyncFrameLength; iter++ ) {
+            for ( let iter = 0; iter < asyncFrameLength; iter++ ) {
                 this._frameLoader(iter)
             }
         }
@@ -224,12 +312,33 @@ class Sequencer {
         ox = ox === null ? (cw / 2 - iw / 2) : ox
         oy = oy === null ? (ch / 2 - ih / 2) : oy
 
-        this._ctx.save()
-        this._ctx.scale(r, r)
-        this._ctx.clearRect(0, 0, cw, ch)  // support for images with alpha
-        this._ctx.drawImage(img, 0, 0, img.width, img.height, ~~(ox), ~~(oy), ~~iw, ~~ih)
-        this._ctx.restore()
+        if ( this._isWebGL ) {
+            this._ctx.viewport(0, 0, this._ctx.canvas.width, this._ctx.canvas.height)
 
+            this._ctx.clear(this._ctx.COLOR_BUFFER_BIT)
+
+            let tex = this._ctx.createTexture()
+
+            this._ctx.bindTexture(this._ctx.TEXTURE_2D, tex)
+            this._ctx.texImage2D(this._ctx.TEXTURE_2D, 0, this._ctx.RGBA, 1, 1, 0, this._ctx.RGBA, this._ctx.UNSIGNED_BYTE,
+                new Uint8Array([ 0, 0, 255, 255 ]))
+
+            this._ctx.texParameteri(this._ctx.TEXTURE_2D, this._ctx.TEXTURE_WRAP_S, this._ctx.CLAMP_TO_EDGE)
+            this._ctx.texParameteri(this._ctx.TEXTURE_2D, this._ctx.TEXTURE_WRAP_T, this._ctx.CLAMP_TO_EDGE)
+            this._ctx.texParameteri(this._ctx.TEXTURE_2D, this._ctx.TEXTURE_MIN_FILTER, this._ctx.LINEAR)
+
+            this._ctx.bindTexture(this._ctx.TEXTURE_2D, tex)
+            this._ctx.texImage2D(this._ctx.TEXTURE_2D, 0, this._ctx.RGBA, this._ctx.RGBA, this._ctx.UNSIGNED_BYTE, img)
+
+            this._ctx.drawImage(tex, 0, 0, img.width, img.height, ~~(ox), ~~(oy), ~~iw, ~~ih)
+        }
+        else {
+            this._ctx.save()
+            this._ctx.scale(r, r)
+            this._ctx.clearRect(0, 0, cw, ch)  // support for images with alpha
+            this._ctx.drawImage(img, 0, 0, img.width, img.height, ~~(ox), ~~(oy), ~~iw, ~~ih)
+            this._ctx.restore()
+        }
         this._currentDrawFrame = this._currentFrame
     }
 
