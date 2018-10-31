@@ -270,8 +270,8 @@ class Sequencer {
         if ( !img || !img.loaded ) return
 
         const r  = this._config.hiDPI ? window.devicePixelRatio : 1
-        const cw = this._ctx.canvas.width / r
-        const ch = this._ctx.canvas.height / r
+        const cw = this._isWebGL ? this._ctx.canvas.width : this._ctx.canvas.width / r
+        const ch = this._isWebGL ? this._ctx.canvas.height : this._ctx.canvas.height / r
         const ca = cw / ch
         const ia = img.width / img.height
         let iw, ih
