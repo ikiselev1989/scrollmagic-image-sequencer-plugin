@@ -38,11 +38,14 @@ class Sequencer {
             hiDPI: true,
             initFrameDraw: true,
             totalLoadCallback: null,
-            imageLoadCallback: null
+            imageLoadCallback: null,
+            useWorkerPreloader: false
         }
 
         this.scene   = scene
         this._config = Object.assign({}, defaults, opts)
+
+        this._workerAvailable = window.Worker
 
         // backwards compatibility: .retina field is assigned to .hiDPI (Retina is an Apple trademark)
         if ( opts.hasOwnProperty('retina') ) this._config.hiDPI = opts.retina
@@ -57,9 +60,10 @@ class Sequencer {
             return false
         }
 
-        this._stoped       = false
-        this._loadedImages = 0
-        this._totalLoaded  = false
+        this._stoped             = false
+        this._loadedImages       = 0
+        this._totalLoaded        = false
+        this._preloadTotalLoaded = false
 
         this._images = []
 
@@ -69,9 +73,90 @@ class Sequencer {
         const sequenceParser = this._parseSequence(this._config.from, this._config.to)
         this._fileList       = this._buildFileList(sequenceParser)
 
+        if ( this._config.asyncLoader && typeof this._config.asyncLoader === 'boolean' ) {
+            this._config.asyncLoader = this._fileList.length
+        }
+
         let init = ({ progress }) => {
-            this._sceneProgressInit(progress)
-            this.scene.off('progress', init)
+            if ( this._config.useWorkerPreloader && this._workerAvailable ) {
+
+                function createWorker(f) {
+                    return new Worker(URL.createObjectURL(new Blob([ `(${f})()` ])))
+                }
+
+                const worker = createWorker(() => {
+                    self.addEventListener('message', ({ data }) => {
+                        let { fileList, baseUrl, asyncLoader } = data
+
+                        let i  = 0, tempArray
+                        let id = 0
+
+                        let chunkProgressor = () => {
+                            tempArray = fileList.slice(i, i + asyncLoader)
+
+                            let promiseArray = []
+
+                            tempArray.forEach((src) => {
+                                let url = new URL(src, baseUrl)
+
+                                promiseArray.push(
+                                    fetch(url.href, {
+                                        mode: 'cors'
+                                    }).then(response => {
+                                        return response.blob()
+                                    }).then(_ => id++ % fileList.length)
+                                )
+                            })
+
+                            Promise.all(promiseArray).then((chunkList) => {
+                                if ( i < fileList.length ) {
+                                    i += asyncLoader
+
+                                    self.postMessage({ type: 'CHUNK', chunkList })
+                                    chunkProgressor()
+                                }
+                                else {
+                                    self.postMessage({ type: 'TOTAL' })
+                                }
+                            })
+                        }
+
+                        chunkProgressor()
+                    })
+                })
+
+                worker.onmessage = (e) => {
+                    let { type, chunkList } = e.data
+
+                    switch ( type ) {
+                        case 'TOTAL':
+                            this.scene.off('progress', init)
+                            this.scene.on('progress', this._progressor.bind(this))
+                            break
+
+                        case 'CHUNK':
+                            this._frameLoader(chunkList)
+                            break
+
+                        default:
+                            return
+                    }
+                }
+
+                let baseUrl = location.href
+
+                worker.postMessage({
+                    fileList: this._fileList,
+                    baseUrl,
+                    asyncLoader: this._config.asyncLoader || this._fileList.length
+                })
+
+                this._currentFrame = Math.round(progress * (this._fileList.length - 1))
+            }
+            else {
+                this._sceneProgressInit(progress)
+                this.scene.off('progress', init)
+            }
         }
 
         this.scene.on('progress', init)
@@ -182,68 +267,86 @@ class Sequencer {
         this.scene.on('progress', this._progressor.bind(this))
     }
 
-    _frameLoader(targetFrame) {
-        if ( this._images[ targetFrame ] ) return
+    _frameLoader(targetFramesList) {
+        let promisesList = []
 
-        const img = new Image()
+        targetFramesList.forEach((frame) => {
+            if ( this._images[ frame ] ) return
 
-        img.onload = () => {
-            img.loaded = true
+            let promise = new Promise((resolve, reject) => {
+                const img = new Image()
 
-            this._loadedImages++
+                img.onload = () => {
+                    img.loaded = true
+                    this._loadedImages++
 
-            if ( !this._config.asyncLoader ) {
-                if ( this._loadedImages < this._fileList.length ) {
-                    this._frameLoader(this._loadedImages)
-                }
-            }
-            else {
-                let asyncFrameLength = parseInt(this._config.asyncLoader)
-
-                if ( asyncFrameLength && (targetFrame + 1) % asyncFrameLength === 0 ) {
-                    let start = targetFrame + 1
-
-                    let end = (targetFrame + asyncFrameLength + 1)
-                    end     = end < this._fileList.length ? end : this._fileList.length
-
-                    for ( let iter = start; iter < end; iter++ ) {
-                        this._frameLoader(iter)
+                    if ( this._config.initFrameDraw && frame === this._currentFrame ) {
+                        !this._imgMode && this._canvasDraw()
+                        this._imgMode && this._imageDraw()
                     }
+
+                    this._config.imageLoadCallback && this._config.imageLoadCallback({ img, frame: frame })
+
+                    if ( this._loadedImages === this._fileList.length ) {
+                        this._loadedImagesCallback()
+                    }
+
+                    resolve()
                 }
-            }
 
-            if ( this._config.initFrameDraw && targetFrame === this._currentFrame ) {
-                !this._imgMode && this._canvasDraw()
-                this._imgMode && this._imageDraw()
-            }
+                img.onerror = function () {
+                    console.error(`Error with image-id: ${frame}`)
 
-            this._config.imageLoadCallback && this._config.imageLoadCallback({ img, frame: targetFrame })
+                    reject()
+                }
 
-            if ( this._loadedImages === this._fileList.length ) {
-                this._loadedImagesCallback()
-            }
-        }
+                this._images[ frame ] = img
 
-        img.onerror = function () {
-            console.error(`Error with image-id: ${targetFrame}`)
-        }
+                img.src = this._fileList[ frame ]
+            })
 
-        this._images[ targetFrame ] = img
+            promisesList.push(promise)
+        })
 
-        img.src = this._fileList[ targetFrame ]
+        return Promise.all(promisesList)
     }
 
     _preloader() {
-        this._frameLoader(this._currentFrame)
-
-        if ( this._config.asyncLoader ) {
-            let asyncFrameLength = parseInt(this._config.asyncLoader)
-
-            asyncFrameLength = asyncFrameLength || this._fileList.length
-
-            for ( let iter = 0; iter < asyncFrameLength; iter++ ) {
-                this._frameLoader(iter)
+        this._frameLoader([ this._currentFrame ]).then(() => {
+            if ( this._config.asyncLoader ) {
+                this._asyncLoader()
             }
+            else {
+                this._syncLoader()
+            }
+        })
+    }
+
+    _asyncLoader() {
+        if ( this._loadedImages < this._fileList.length ) {
+            let chunkStartIndex = (this._loadedImages + this._currentFrame) % this._fileList.length
+            let chunkEndIndex   = chunkStartIndex + parseInt(this._config.asyncLoader)
+            chunkEndIndex       = chunkEndIndex > this._fileList.length ? this._fileList.length : chunkEndIndex
+
+            let chunkArray = []
+
+            for ( var i = chunkStartIndex; i < chunkEndIndex; i++ ) {
+                chunkArray.push(i)
+            }
+
+            this._frameLoader(chunkArray).then(() => {
+                this._asyncLoader()
+            })
+        }
+    }
+
+    _syncLoader() {
+        if ( this._loadedImages < this._fileList.length ) {
+            let currentIndex = (this._loadedImages + this._currentFrame) % this._fileList.length
+
+            this._frameLoader([ currentIndex ]).then(() => {
+                this._syncLoader()
+            })
         }
     }
 

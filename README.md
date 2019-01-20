@@ -52,31 +52,14 @@ sequencer.resize(width, height)
     initFrameDraw: true,                        // drawing frame after sequencer init
     totalLoadCallback: () => {},                // callback after loading all frames
     imageLoadCallback: ({ img, frame }) => {}   // callback after loading each frame
+    useWorkerPreloader: false                   // use worker preloader
 }
 ```
 > Based on [Andreas Gysin Sequencer](https://github.com/ertdfgcvb/Sequencer)
 
 ### Changes
+**3.7.0-beta.0**<br />
+Add *useWorkerPreloader* option
+
 **3.6.0**<br />
 Add *canvasContext* option (yes, the plugin supports webgl now)
-
-**3.5.0**<br />
-Add *number of frames* value for *asyncLoader*
-
-**3.4.0**<br />
-Remove *durationMultiply* option (please set scene duration manually)
-
-**3.3.0**<br />
-Added *framePosition* option for cover *scaleMode*
-
-**3.2.0**<br />
-Added sequential loading of images
-
-**3.1.0**<br />
-Added support for img tag as canvas<br />
-
-**3.0.0**<br/>
-Removed *asyncLoader*, *scrollEasing*.<br />
-Added *durationMultiply* option.
-
-*!!! version 2.x was deprecated, cause had some issue with scrolling on MacOS !!!*

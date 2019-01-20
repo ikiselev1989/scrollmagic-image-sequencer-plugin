@@ -1,11 +1,11 @@
 {
   "name": "scrollmagic-sequencer",
-  "version": "3.6.1",
+  "version": "3.7.0-beta.0",
   "description": "image sequencer for scrollmagic scene",
   "main": "index.min.js",
   "scripts": {
-    "webpack": "webpack --config webpack.config.js",
-    "build": "babel index.js -o index.min.js"
+    "build": "babel index.js -o index.min.js",
+    "webpack": "webpack --config webpack.config.js"
   },
   "repository": {
     "type": "git",
