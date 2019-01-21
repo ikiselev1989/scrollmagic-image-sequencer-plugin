@@ -2887,7 +2887,7 @@ var _createClass = function () { function defineProperties(target, props) { for 
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       * Project:
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       *
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      * Version: 3.6.1
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      * Version: 3.7.0 beta 2
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       *
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       * Based on http://github.com/ertdfgcvb/Sequencer
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       */
@@ -2968,17 +2968,15 @@ var Sequencer = function () {
             this._config.asyncLoader = this._fileList.length;
         }
 
-        var init = function init(_ref) {
-            var progress = _ref.progress;
-
+        var init = function init(progress) {
             if (_this._config.useWorkerPreloader && _this._workerAvailable) {
                 var createWorker = function createWorker(f) {
                     return new Worker(URL.createObjectURL(new Blob(['(' + f + ')()'])));
                 };
 
                 var worker = createWorker(function () {
-                    self.addEventListener('message', function (_ref2) {
-                        var data = _ref2.data;
+                    self.addEventListener('message', function (_ref) {
+                        var data = _ref.data;
                         var fileList = data.fileList,
                             baseUrl = data.baseUrl,
                             asyncLoader = data.asyncLoader;
@@ -3009,7 +3007,6 @@ var Sequencer = function () {
                                 if (i < fileList.length) {
                                     i += asyncLoader;
 
-                                    self.postMessage({ type: 'CHUNK', chunkList: chunkList });
                                     chunkProgressor();
                                 } else {
                                     self.postMessage({ type: 'TOTAL' });
@@ -3022,24 +3019,8 @@ var Sequencer = function () {
                 });
 
                 worker.onmessage = function (e) {
-                    var _e$data = e.data,
-                        type = _e$data.type,
-                        chunkList = _e$data.chunkList;
-
-
-                    switch (type) {
-                        case 'TOTAL':
-                            _this.scene.on('progress', _this._progressor.bind(_this));
-                            worker.terminate();
-                            break;
-
-                        case 'CHUNK':
-                            _this._frameLoader(chunkList);
-                            break;
-
-                        default:
-                            return;
-                    }
+                    worker.terminate();
+                    _this._sceneProgressInit(progress);
                 };
 
                 var baseUrl = location.href;
@@ -3049,16 +3030,12 @@ var Sequencer = function () {
                     baseUrl: baseUrl,
                     asyncLoader: _this._config.asyncLoader || _this._fileList.length
                 });
-
-                _this._currentFrame = Math.round(progress * (_this._fileList.length - 1));
-                _this.scene.off('progress', init);
             } else {
                 _this._sceneProgressInit(progress);
-                _this.scene.off('progress', init);
             }
         };
 
-        this.scene.on('progress', init);
+        init(this.scene.progress());
     }
 
     _createClass(Sequencer, [{
@@ -3244,7 +3221,7 @@ var Sequencer = function () {
                 }
 
                 this._frameLoader(chunkArray).then(function () {
-                    _this5._asyncLoader();
+                    requestAnimationFrame(_this5._asyncLoader.bind(_this5));
                 });
             }
         }
@@ -3257,7 +3234,7 @@ var Sequencer = function () {
                 var currentIndex = (this._loadedImages + this._currentFrame) % this._fileList.length;
 
                 this._frameLoader([currentIndex]).then(function () {
-                    _this6._syncLoader();
+                    requestAnimationFrame(_this6._syncLoader.bind(_this6));
                 });
             }
         }
@@ -3269,8 +3246,8 @@ var Sequencer = function () {
         }
     }, {
         key: '_progressor',
-        value: function _progressor(_ref3) {
-            var progress = _ref3.progress;
+        value: function _progressor(_ref2) {
+            var progress = _ref2.progress;
 
             if (this._stoped) return;
 
@@ -3356,6 +3333,7 @@ var Sequencer = function () {
                 this._ctx.drawImage(img, 0, 0, img.width, img.height, ~~ox, ~~oy, ~~iw, ~~ih);
                 this._ctx.restore();
             }
+
             this._currentDrawFrame = this._currentFrame;
         }
     }, {

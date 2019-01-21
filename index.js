@@ -9,7 +9,7 @@
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 3.6.1
+ * Version: 3.7.0 beta 2
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -77,7 +77,7 @@ class Sequencer {
             this._config.asyncLoader = this._fileList.length
         }
 
-        let init = ({ progress }) => {
+        let init = (progress) => {
             if ( this._config.useWorkerPreloader && this._workerAvailable ) {
 
                 function createWorker(f) {
@@ -112,7 +112,6 @@ class Sequencer {
                                 if ( i < fileList.length ) {
                                     i += asyncLoader
 
-                                    self.postMessage({ type: 'CHUNK', chunkList })
                                     chunkProgressor()
                                 }
                                 else {
@@ -126,21 +125,8 @@ class Sequencer {
                 })
 
                 worker.onmessage = (e) => {
-                    let { type, chunkList } = e.data
-
-                    switch ( type ) {
-                        case 'TOTAL':
-                            this.scene.on('progress', this._progressor.bind(this))
-                            worker.terminate()
-                            break
-
-                        case 'CHUNK':
-                            this._frameLoader(chunkList)
-                            break
-
-                        default:
-                            return
-                    }
+                    worker.terminate()
+                    this._sceneProgressInit(progress)
                 }
 
                 let baseUrl = location.href
@@ -150,17 +136,13 @@ class Sequencer {
                     baseUrl,
                     asyncLoader: this._config.asyncLoader || this._fileList.length
                 })
-
-                this._currentFrame = Math.round(progress * (this._fileList.length - 1))
-                this.scene.off('progress', init)
             }
             else {
                 this._sceneProgressInit(progress)
-                this.scene.off('progress', init)
             }
         }
 
-        this.scene.on('progress', init)
+        init(this.scene.progress())
     }
 
     _webglInit() {
@@ -336,7 +318,7 @@ class Sequencer {
             }
 
             this._frameLoader(chunkArray).then(() => {
-                this._asyncLoader()
+                requestAnimationFrame(this._asyncLoader.bind(this))
             })
         }
     }
@@ -346,7 +328,7 @@ class Sequencer {
             let currentIndex = (this._loadedImages + this._currentFrame) % this._fileList.length
 
             this._frameLoader([ currentIndex ]).then(() => {
-                this._syncLoader()
+                requestAnimationFrame(this._syncLoader.bind(this))
             })
         }
     }
@@ -443,6 +425,7 @@ class Sequencer {
             this._ctx.drawImage(img, 0, 0, img.width, img.height, ~~(ox), ~~(oy), ~~iw, ~~ih)
             this._ctx.restore()
         }
+
         this._currentDrawFrame = this._currentFrame
     }
 
