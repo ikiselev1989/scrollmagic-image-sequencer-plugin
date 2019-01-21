@@ -52,14 +52,13 @@ sequencer.resize(width, height)
     initFrameDraw: true,                        // drawing frame after sequencer init
     totalLoadCallback: () => {},                // callback after loading all frames
     imageLoadCallback: ({ img, frame }) => {}   // callback after loading each frame
-    useWorkerPreloader: false                   // use worker preloader
 }
 ```
 > Based on [Andreas Gysin Sequencer](https://github.com/ertdfgcvb/Sequencer)
 
 ### Changes
-**3.7.0-beta.0**<br />
-Add *useWorkerPreloader* option
+**3.6.2**<br />
+Fix *webgl* canvas context
 
 **3.6.0**<br />
 Add *canvasContext* option (yes, the plugin supports webgl now)

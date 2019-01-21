@@ -9,7 +9,7 @@
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 3.7.0 beta 4
+ * Version: 3.6.2
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -38,14 +38,11 @@ class Sequencer {
             hiDPI: true,
             initFrameDraw: true,
             totalLoadCallback: null,
-            imageLoadCallback: null,
-            useWorkerPreloader: false
+            imageLoadCallback: null
         }
 
         this.scene   = scene
         this._config = Object.assign({}, defaults, opts)
-
-        this._workerAvailable = window.Worker
 
         // backwards compatibility: .retina field is assigned to .hiDPI (Retina is an Apple trademark)
         if ( opts.hasOwnProperty('retina') ) this._config.hiDPI = opts.retina
@@ -78,68 +75,7 @@ class Sequencer {
         }
 
         let init = (progress) => {
-            if ( this._config.useWorkerPreloader && this._workerAvailable ) {
-
-                function createWorker(f) {
-                    return new Worker(URL.createObjectURL(new Blob([ `(${f})()` ])))
-                }
-
-                const worker = createWorker(() => {
-                    self.addEventListener('message', ({ data }) => {
-                        let { fileList, baseUrl, asyncLoader } = data
-
-                        let i  = 0, tempArray
-                        let id = 0
-
-                        let chunkProgressor = () => {
-                            tempArray = fileList.slice(i, i + asyncLoader)
-
-                            let promiseArray = []
-
-                            tempArray.forEach((src) => {
-                                let url = new URL(src, baseUrl)
-
-                                promiseArray.push(
-                                    fetch(url.href, {
-                                        mode: 'cors'
-                                    }).then(response => {
-                                        return response.blob()
-                                    }).then(_ => id++ % fileList.length)
-                                )
-                            })
-
-                            Promise.all(promiseArray).then((chunkList) => {
-                                if ( i < fileList.length ) {
-                                    i += asyncLoader
-
-                                    chunkProgressor()
-                                }
-                                else {
-                                    self.postMessage({ type: 'TOTAL' })
-                                }
-                            })
-                        }
-
-                        chunkProgressor()
-                    })
-                })
-
-                worker.onmessage = (e) => {
-                    worker.terminate()
-                    this._sceneProgressInit(progress)
-                }
-
-                let baseUrl = location.href
-
-                worker.postMessage({
-                    fileList: this._fileList,
-                    baseUrl,
-                    asyncLoader: this._config.asyncLoader || this._fileList.length
-                })
-            }
-            else {
-                this._sceneProgressInit(progress)
-            }
+            this._sceneProgressInit(progress)
         }
 
         init(this.scene.progress())
