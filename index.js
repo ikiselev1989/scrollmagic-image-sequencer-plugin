@@ -9,7 +9,7 @@
  * Project:
  *      https://github.com/ikiselev1989/scrollmagic-image-sequencer-plugin
  *
- * Version: 3.7.0 beta 2
+ * Version: 3.7.0 beta 4
  *
  * Based on http://github.com/ertdfgcvb/Sequencer
  */
@@ -230,6 +230,7 @@ class Sequencer {
                 }
                 else {
                     console.info('Scrollmagic sequencer use WebGL context')
+                    this._webglInit()
                 }
             }
 
@@ -297,17 +298,17 @@ class Sequencer {
     _preloader() {
         this._frameLoader([ this._currentFrame ]).then(() => {
             if ( this._config.asyncLoader ) {
-                this._asyncLoader()
+                this._asyncLoader(this._currentFrame)
             }
             else {
-                this._syncLoader()
+                this._syncLoader(this._currentFrame)
             }
         })
     }
 
-    _asyncLoader() {
+    _asyncLoader(initFrame) {
         if ( this._loadedImages < this._fileList.length ) {
-            let chunkStartIndex = (this._loadedImages + this._currentFrame) % this._fileList.length
+            let chunkStartIndex = (this._loadedImages + initFrame) % this._fileList.length
             let chunkEndIndex   = chunkStartIndex + parseInt(this._config.asyncLoader)
             chunkEndIndex       = chunkEndIndex > this._fileList.length ? this._fileList.length : chunkEndIndex
 
@@ -318,17 +319,17 @@ class Sequencer {
             }
 
             this._frameLoader(chunkArray).then(() => {
-                requestAnimationFrame(this._asyncLoader.bind(this))
+                requestAnimationFrame(this._asyncLoader.bind(this, initFrame))
             })
         }
     }
 
-    _syncLoader() {
+    _syncLoader(initFrame) {
         if ( this._loadedImages < this._fileList.length ) {
-            let currentIndex = (this._loadedImages + this._currentFrame) % this._fileList.length
+            let currentIndex = (this._loadedImages + initFrame) % this._fileList.length
 
             this._frameLoader([ currentIndex ]).then(() => {
-                requestAnimationFrame(this._syncLoader.bind(this))
+                requestAnimationFrame(this._syncLoader.bind(this, initFrame))
             })
         }
     }

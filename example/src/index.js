@@ -19,7 +19,9 @@ sceneCanvas.addImageSequencer({
     canvas: document.querySelector('canvas'),
     from: './images/Aaron_Kyro_001.jpg',
     to: './images/Aaron_Kyro_503.jpg',
-    asyncLoader: 10
+    asyncLoader: 10,
+    canvasContext: 'webgl',
+    useWorkerPreloader: true
 })
 
 sceneImage.addImageSequencer({
