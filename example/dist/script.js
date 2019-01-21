@@ -3029,8 +3029,8 @@ var Sequencer = function () {
 
                     switch (type) {
                         case 'TOTAL':
-                            _this.scene.off('progress', init);
                             _this.scene.on('progress', _this._progressor.bind(_this));
+                            worker.terminate();
                             break;
 
                         case 'CHUNK':
@@ -3051,6 +3051,7 @@ var Sequencer = function () {
                 });
 
                 _this._currentFrame = Math.round(progress * (_this._fileList.length - 1));
+                _this.scene.off('progress', init);
             } else {
                 _this._sceneProgressInit(progress);
                 _this.scene.off('progress', init);

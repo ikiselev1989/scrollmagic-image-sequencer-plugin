@@ -130,8 +130,8 @@ class Sequencer {
 
                     switch ( type ) {
                         case 'TOTAL':
-                            this.scene.off('progress', init)
                             this.scene.on('progress', this._progressor.bind(this))
+                            worker.terminate()
                             break
 
                         case 'CHUNK':
@@ -152,6 +152,7 @@ class Sequencer {
                 })
 
                 this._currentFrame = Math.round(progress * (this._fileList.length - 1))
+                this.scene.off('progress', init)
             }
             else {
                 this._sceneProgressInit(progress)
